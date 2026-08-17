@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "Zu'z Diary",
+    "slug": "APK-rand_k",
+    "version": "1.0.0",
+    "scheme": "zuzdiary",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#05040A",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Zu'z Diary potrzebuje dostępu do galerii, żeby dodać zdjęcie do wspomnienia."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#05040A",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Zu'z Diary potrzebuje dostępu do galerii, żeby dodać zdjęcie do wspomnienia."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
