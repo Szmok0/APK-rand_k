@@ -35,6 +35,14 @@
         {
           "photosPermission": "Zu'z Diary potrzebuje dostępu do galerii, żeby dodać zdjęcie do wspomnienia."
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-dino.jpg",
+          "resizeMode": "cover",
+          "backgroundColor": "#05040A"
+        }
       ]
     ],
     "experiments": {

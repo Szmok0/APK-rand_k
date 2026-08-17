@@ -40,9 +40,12 @@ assets/
 Zgodnie z MD te elementy są świadomie odłożone/placeholderowe i łatwe do podmiany
 bez zmian architektonicznych:
 
-- **Splash / motyw dinozaura** — nie dostarczono grafiki klienta, więc `index.tsx`
-  używa wektorowego placeholdera (`src/components/DinoPlaceholder.tsx`). Do
-  podmiany na docelowy PNG/SVG od klienta.
+- **Splash / motyw dinozaura** — `assets/splash-dino.jpg`, gotowa grafika
+  dostarczona przez klienta (dino + tytuł "Zu'z Diary" wypalone w obrazie),
+  użyta jako pełnoekranowy statyczny asset w `app/index.tsx` i jednocześnie
+  jako natywny boot-splash (`expo-splash-screen` w `app.json`, `resizeMode:
+  "cover"`) — dzięki temu obraz jest widoczny od pierwszej klatki, jeszcze
+  zanim załaduje się JS, bez przebłysku.
 - **Baza cytatów** (`src/data/quotes.ts`) — ok. 140 własnych sentencji PL jako
   placeholder startowy (MD sugeruje 150–365). Jedna lista, bez zmian w logice
   wyboru (`engine/quote.ts`, deterministyczne `dayOfYear % liczba`).
