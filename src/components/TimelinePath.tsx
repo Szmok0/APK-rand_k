@@ -11,29 +11,35 @@ import { dayLabelShort, durationHours, fromDateKey } from '@/utils/dates';
 type Props = {
   days: string[]; // rosnąco, jeden punkt na dzień (sekcja 7)
   activityByDate: Map<string, Activity>;
+  width: number; // dostępna szerokość kontenera — geometria skaluje się do niej
   dense?: boolean; // widok miesięczny — mniejsze punkty, bez podpisów dat
   onSelectDay: (dateKey: string) => void;
 };
 
 const SPACING_NORMAL = 92;
 const SPACING_DENSE = 40;
-const AMPLITUDE = 34;
+const LABEL_GAP = 14;
+const MIN_LABEL_WIDTH = 84;
 
 // Zakręcony timeline — jedna linia, jeden punkt = jeden dzień, stała odległość
 // między punktami (sekcja 7). Ligatura = wspólny glow dla wielu glifów jednego dnia.
-export function TimelinePath({ days, activityByDate, dense, onSelectDay }: Props) {
+// Geometria (centerX, amplituda, szerokość etykiet) skaluje się do realnej
+// szerokości ekranu, żeby etykiety nigdy nie wychodziły poza widoczny obszar.
+export function TimelinePath({ days, activityByDate, width, dense, onSelectDay }: Props) {
   const [tooltip, setTooltip] = useState<string | null>(null);
-  const spacing = dense ? SPACING_DENSE : SPACING_NORMAL;
-  const centerX = 64;
+  const rowSpacing = dense ? SPACING_DENSE : SPACING_NORMAL;
+  const centerX = width / 2;
+  const amplitude = dense ? 0 : Math.min(26, width * 0.09);
+  const labelWidth = Math.max(MIN_LABEL_WIDTH, centerX - amplitude - LABEL_GAP - 8);
 
   const points = useMemo(
     () =>
       days.map((date, i) => ({
         date,
-        x: centerX + AMPLITUDE * Math.sin(i * 1.05),
-        y: 24 + i * spacing,
+        x: centerX + amplitude * Math.sin(i * 1.05),
+        y: 24 + i * rowSpacing,
       })),
-    [days, spacing]
+    [days, rowSpacing, centerX, amplitude]
   );
 
   const pathD = useMemo(() => {
@@ -49,13 +55,12 @@ export function TimelinePath({ days, activityByDate, dense, onSelectDay }: Props
   }, [points]);
 
   const height = points.length ? points[points.length - 1].y + 40 : 0;
-  const width = centerX * 2 + AMPLITUDE;
 
   return (
-    <View style={{ width: '100%' }}>
+    <View style={{ width, height }}>
       <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
         <Path d={pathD} stroke={colors.gold} strokeOpacity={0.35} strokeWidth={1.5} fill="none" />
-        {points.map((p, i) => {
+        {points.map((p) => {
           const activity = activityByDate.get(p.date);
           const hasActivity = !!activity && activity.glyphIds.length > 0;
           const dominantMood = activity?.glyphIds
@@ -89,55 +94,58 @@ export function TimelinePath({ days, activityByDate, dense, onSelectDay }: Props
         })}
       </Svg>
 
-      <View style={{ height, width: '100%' }}>
-        {points.map((p) => {
-          const activity = activityByDate.get(p.date);
-          const d = fromDateKey(p.date);
-          const label = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`;
-          const isRight = Math.sin((days.indexOf(p.date)) * 1.05) >= 0;
+      {points.map((p, i) => {
+        const activity = activityByDate.get(p.date);
+        const d = fromDateKey(p.date);
+        const label = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const isRight = Math.sin(i * 1.05) >= 0;
+        const labelLeft = isRight
+          ? Math.min(width - labelWidth - 4, p.x + amplitude + LABEL_GAP)
+          : Math.max(4, p.x - amplitude - LABEL_GAP - labelWidth);
 
-          return (
+        return (
+          <React.Fragment key={p.date}>
             <Pressable
-              key={p.date}
-              style={[
-                styles.hit,
-                { top: p.y - (dense ? 14 : 20), left: p.x - (dense ? 14 : 20) },
-              ]}
+              hitSlop={10}
+              style={[styles.hit, { top: p.y - 16, left: p.x - 16 }]}
               onPress={() => (dense ? setTooltip(p.date === tooltip ? null : p.date) : onSelectDay(p.date))}
               onLongPress={() => onSelectDay(p.date)}
-            >
-              {!dense && (
-                <View
-                  style={[
-                    styles.labelWrap,
-                    isRight ? styles.labelRight : styles.labelLeft,
-                  ]}
-                >
-                  <Text style={styles.dateLabel}>
-                    {label} · {dayLabelShort(p.date)}
-                  </Text>
-                  {activity && activity.glyphIds.length > 0 && (
-                    <>
-                      <GlyphCluster glyphIds={activity.glyphIds} size={16} />
-                      <Text style={styles.eventLabel} numberOfLines={1}>
-                        {activity.glyphIds.map((id) => GLYPH_MAP[id]?.name).join(' + ')}
-                        {activity.startTime && activity.endTime
-                          ? ` · ${durationHours(activity.startTime, activity.endTime)}h`
-                          : ''}
-                      </Text>
-                    </>
-                  )}
-                </View>
-              )}
-              {dense && tooltip === p.date && (
-                <View style={styles.tooltip}>
-                  <Text style={styles.tooltipText}>{label}</Text>
-                </View>
-              )}
-            </Pressable>
-          );
-        })}
-      </View>
+            />
+
+            {!dense && (
+              <Pressable
+                onPress={() => onSelectDay(p.date)}
+                style={[
+                  styles.labelWrap,
+                  { top: p.y - 6, left: labelLeft, width: labelWidth },
+                  isRight ? styles.labelAlignLeft : styles.labelAlignRight,
+                ]}
+              >
+                <Text style={styles.dateLabel} numberOfLines={1}>
+                  {label} · {dayLabelShort(p.date)}
+                </Text>
+                {activity && activity.glyphIds.length > 0 && (
+                  <>
+                    <GlyphCluster glyphIds={activity.glyphIds} size={16} />
+                    <Text style={styles.eventLabel} numberOfLines={1}>
+                      {activity.glyphIds.map((id) => GLYPH_MAP[id]?.name).join(' + ')}
+                      {activity.startTime && activity.endTime
+                        ? ` · ${durationHours(activity.startTime, activity.endTime)}h`
+                        : ''}
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+            )}
+
+            {dense && tooltip === p.date && (
+              <View style={[styles.tooltip, { top: p.y - 22, left: p.x - 20 }]}>
+                <Text style={styles.tooltipText}>{label}</Text>
+              </View>
+            )}
+          </React.Fragment>
+        );
+      })}
     </View>
   );
 }
@@ -145,23 +153,17 @@ export function TimelinePath({ days, activityByDate, dense, onSelectDay }: Props
 const styles = StyleSheet.create({
   hit: {
     position: 'absolute',
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 32,
+    height: 32,
   },
   labelWrap: {
     position: 'absolute',
-    top: -6,
-    width: 150,
   },
-  labelLeft: {
-    left: -170,
-    alignItems: 'flex-end',
-  },
-  labelRight: {
-    left: 44,
+  labelAlignLeft: {
     alignItems: 'flex-start',
+  },
+  labelAlignRight: {
+    alignItems: 'flex-end',
   },
   dateLabel: {
     color: colors.textSecondary,
@@ -171,11 +173,10 @@ const styles = StyleSheet.create({
   eventLabel: {
     color: colors.textFaint,
     fontSize: 10,
-    maxWidth: 150,
+    maxWidth: '100%',
   },
   tooltip: {
     position: 'absolute',
-    top: -22,
     backgroundColor: colors.surfaceAlt,
     paddingHorizontal: 6,
     paddingVertical: 2,

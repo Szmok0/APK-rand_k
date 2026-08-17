@@ -40,7 +40,7 @@
         "expo-splash-screen",
         {
           "image": "./assets/splash-dino.jpg",
-          "resizeMode": "cover",
+          "resizeMode": "contain",
           "backgroundColor": "#05040A"
         }
       ]

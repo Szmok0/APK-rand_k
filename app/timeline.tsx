@@ -3,7 +3,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { TimelinePath } from '@/components/TimelinePath';
 import { Header, Screen } from '@/components/ui';
@@ -12,6 +12,9 @@ import { colors, radius, spacing } from '@/theme/tokens';
 import { monthGrid, monthLabel, weekDays } from '@/utils/dates';
 
 type Mode = 'week' | 'month';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const PATH_WIDTH = SCREEN_WIDTH - spacing.md * 2;
 
 export default function TimelineScreen() {
   const { activities } = useRelationship();
@@ -99,6 +102,7 @@ export default function TimelineScreen() {
         <TimelinePath
           days={days}
           activityByDate={activityByDate}
+          width={PATH_WIDTH}
           dense={mode === 'month'}
           onSelectDay={(date) => router.push({ pathname: '/day/[date]', params: { date } })}
         />

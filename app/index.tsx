@@ -15,10 +15,15 @@ import { colors, spacing } from '@/theme/tokens';
 export default function SplashScreen() {
   return (
     <View style={styles.container}>
+      {/* "contain", nie "cover": grafika ma wpisany tytuł u góry (proporcje 2:3) —
+          na typowych, węższych proporcjach telefonu "cover" ucinałby napis
+          w poziomie. "contain" gwarantuje, że cały kadr (tytuł + dino) zawsze
+          mieści się w ekranie, z niewidocznym dopełnieniem (tło obrazu jest
+          czarne, praktycznie identyczne z tłem appki). */}
       <Image
         source={require('../assets/splash-dino.jpg')}
-        style={StyleSheet.absoluteFill}
-        resizeMode="cover"
+        style={[StyleSheet.absoluteFill, styles.artwork]}
+        resizeMode="contain"
       />
 
       <LinearGradient
@@ -38,6 +43,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  artwork: {
+    // Zapasowa jawna szerokość/wysokość — samo `absoluteFill` (top/left/right/
+    // bottom: 0) potrafi nie wystarczyć do rozciągnięcia obrazu na web, jeśli
+    // statyczny asset niesie własne wymiary intrinsic.
+    width: '100%',
+    height: '100%',
   },
   fade: {
     position: 'absolute',

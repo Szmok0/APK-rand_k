@@ -86,11 +86,13 @@ export default function DayDetailScreen() {
               </Text>
             )}
 
-            <View style={styles.importanceRow}>
-              {Array.from({ length: activity.importance + 1 }).map((_, i) => (
-                <Ionicons key={i} name="star" size={14} color={colors.gold} />
-              ))}
-            </View>
+            {activity.importance > 0 && (
+              <View style={styles.importanceRow}>
+                {Array.from({ length: activity.importance }).map((_, i) => (
+                  <Ionicons key={i} name="star" size={14} color={colors.gold} />
+                ))}
+              </View>
+            )}
 
             {activity.photoUri && (
               <Image source={{ uri: activity.photoUri }} style={styles.photo} />

@@ -21,7 +21,12 @@ export function ImportanceSelector({
     <View>
       <View style={styles.dots}>
         {([0, 1, 2] as const).map((level) => (
-          <Pressable key={level} onPress={() => onChange(level)} style={styles.dotHit}>
+          <Pressable
+            key={level}
+            testID={`importance-${level}`}
+            onPress={() => onChange(level)}
+            style={styles.dotHit}
+          >
             <View
               style={[
                 styles.dot,
