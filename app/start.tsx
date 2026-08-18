@@ -1,12 +1,14 @@
-// EKRAN START — "Zu'z Diary" (sekcja 4/5 MD). Najważniejszy ekran aplikacji:
-// Relationship DNA + Emotional Tone Layer + podsumowanie + codzienny cytat + 3 CTA.
+// EKRAN START — "Zu'z Diary" (sekcja 4/5 MD v6). Galaktyka DNA jest teraz statycznym
+// obrazem (v5) — Emotional Tone Layer (dynamiczne podświetlenie) odłożone (sekcja 6).
+// Layout wypełnia całą wysokość ekranu (poprawka v4) — bez ScrollView, bez pustej
+// przestrzeni pod przyciskami.
 
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useMemo } from 'react';
-import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { DnaGalaxy } from '@/components/DnaGalaxy';
 import { StatRow } from '@/components/StatRow';
 import { GoldButton, OutlineButton, Screen } from '@/components/ui';
 import { dailyQuote } from '@/engine/quote';
@@ -14,11 +16,9 @@ import { computeSummary } from '@/engine/summary';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, spacing, typography } from '@/theme/tokens';
 
-const { width } = Dimensions.get('window');
-const GALAXY_SIZE = Math.min(width - spacing.lg * 2, 340);
-
 export default function StartScreen() {
   const { activities, loading } = useRelationship();
+  const insets = useSafeAreaInsets();
   const summary = useMemo(() => computeSummary(activities), [activities]);
   const quote = useMemo(() => dailyQuote(), []);
 
@@ -26,7 +26,7 @@ export default function StartScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={[styles.content, { paddingTop: insets.top + spacing.sm, paddingBottom: insets.bottom + spacing.md }]}>
         <View style={styles.header}>
           <View style={{ width: 32 }} />
           <Text style={styles.title}>Zu'z Diary</Text>
@@ -35,8 +35,14 @@ export default function StartScreen() {
           </Pressable>
         </View>
 
+        {/* Galaktyka DNA — statyczny obraz (v5), największy elastyczny element,
+            wypełnia miejsce pozostałe po reszcie treści (poprawka v4). */}
         <View style={styles.galaxyWrap}>
-          <DnaGalaxy activities={activities} size={GALAXY_SIZE} />
+          <Image
+            source={require('../assets/dna_background.png')}
+            style={styles.galaxyImage}
+            resizeMode="contain"
+          />
         </View>
 
         <StatRow summary={summary} />
@@ -54,16 +60,15 @@ export default function StartScreen() {
           onPress={() => router.push('/add-activity')}
           style={styles.mainCta}
         />
-      </ScrollView>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   content: {
+    flex: 1,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xxl,
   },
   header: {
     flexDirection: 'row',
@@ -76,14 +81,18 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   galaxyWrap: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: spacing.sm,
+    minHeight: 220,
+  },
+  galaxyImage: {
+    width: '100%',
+    height: '100%',
   },
   quoteBox: {
-    marginTop: spacing.lg,
-    marginBottom: spacing.lg,
     paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
   },
   quote: {
     ...typography.body,

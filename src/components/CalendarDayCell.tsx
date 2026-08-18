@@ -1,58 +1,32 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
 
 import { GLYPH_MAP } from '@/data/glyphs';
-import { GlyphCluster } from '@/components/GlyphCluster';
 import { colors, moodColors } from '@/theme/tokens';
 import type { Activity } from '@/types/models';
-import { durationHours } from '@/utils/dates';
 
 type Props = {
   dayNumber: number;
   inMonth: boolean;
   isToday?: boolean;
+  isSelected?: boolean;
   activity?: Activity;
 };
 
-const RING_SIZE = 30;
-const RING_R = 13;
-
-// Komórka dnia — sekcja 9 MD: numer dnia, glif/ligatura, czas (jeśli wymagany),
-// marker notatki, marker zdjęcia. Łuk wokół numeru dnia = wizualny odpowiednik
-// czasu trwania (im dłużej, tym więcej łuku) — inspirowane mockupem kalendarza.
-export function CalendarDayCell({ dayNumber, inMonth, isToday, activity }: Props) {
-  const hours = activity ? durationHours(activity.startTime, activity.endTime) : 0;
-  const dominantMood = activity?.glyphIds
-    .map((id) => GLYPH_MAP[id]?.moodTag)
-    .find((m) => !!m);
-  const ringColor = dominantMood ? moodColors[dominantMood] : colors.gold;
-  const circumference = 2 * Math.PI * RING_R;
-  const dash = circumference * Math.min(hours / 12, 1);
+// Komórka dnia — sekcja 9 MD v6: maksymalnie minimalna. Numer dnia + JEDEN mały
+// kolorowy wskaźnik aktywności (nigdy pełna ikona glifu — komórka jest fizycznie
+// za mała, żeby zmieścić czytelną ikonę) + kropka notatki przy numerze. Treść
+// (glify, czas, zdjęcie) przenosi się do panelu podglądu pod siatką.
+export function CalendarDayCell({ dayNumber, inMonth, isToday, isSelected, activity }: Props) {
+  const moodTags = activity
+    ? Array.from(
+        new Set(activity.glyphIds.map((id) => GLYPH_MAP[id]?.moodTag).filter((m): m is NonNullable<typeof m> => !!m))
+      )
+    : [];
 
   return (
-    <View style={styles.wrap}>
-      <View style={styles.numberWrap}>
-        {hours > 0 && (
-          <Svg
-            width={RING_SIZE}
-            height={RING_SIZE}
-            style={StyleSheet.absoluteFill}
-          >
-            <Circle
-              cx={RING_SIZE / 2}
-              cy={RING_SIZE / 2}
-              r={RING_R}
-              stroke={ringColor}
-              strokeOpacity={0.6}
-              strokeWidth={1.5}
-              fill="none"
-              strokeDasharray={`${dash} ${circumference}`}
-              strokeLinecap="round"
-              transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
-            />
-          </Svg>
-        )}
+    <View style={[styles.wrap, isSelected && styles.wrapSelected]}>
+      <View style={styles.numberRow}>
         <Text
           style={[
             styles.dayNumber,
@@ -62,24 +36,16 @@ export function CalendarDayCell({ dayNumber, inMonth, isToday, activity }: Props
         >
           {dayNumber}
         </Text>
+        {activity?.note ? <View style={styles.noteDot} /> : null}
       </View>
 
-      {activity && activity.glyphIds.length > 0 && (
-        <View style={styles.glyphSlot}>
-          <GlyphCluster glyphIds={activity.glyphIds} size={14} max={2} />
+      {moodTags.length > 0 && (
+        <View style={styles.indicatorRow}>
+          {moodTags.slice(0, 3).map((tag) => (
+            <View key={tag} style={[styles.indicator, { backgroundColor: moodColors[tag] }]} />
+          ))}
         </View>
       )}
-
-      {activity?.startTime && activity?.endTime && (
-        <Text style={styles.time}>
-          {activity.startTime.slice(0, 2)}–{activity.endTime.slice(0, 2)}
-        </Text>
-      )}
-
-      <View style={styles.markerRow}>
-        {activity?.note ? <View style={styles.noteDot} /> : null}
-        {activity?.photoUri ? <View style={styles.photoDot} /> : null}
-      </View>
     </View>
   );
 }
@@ -90,15 +56,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
     height: '100%',
+    borderRadius: 8,
   },
-  numberWrap: {
-    width: RING_SIZE,
-    height: RING_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
+  wrapSelected: {
+    backgroundColor: colors.goldSoft,
+  },
+  numberRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   dayNumber: {
-    fontSize: 11,
+    fontSize: 12,
     color: colors.textSecondary,
   },
   dayNumberFaint: {
@@ -108,31 +76,22 @@ const styles = StyleSheet.create({
     color: colors.gold,
     fontWeight: '700',
   },
-  glyphSlot: {
-    marginTop: -2,
-  },
-  time: {
-    fontSize: 8,
-    color: colors.textFaint,
-    marginTop: 1,
-  },
-  markerRow: {
-    flexDirection: 'row',
-    marginTop: 1,
-    height: 5,
-  },
   noteDot: {
-    width: 3.5,
-    height: 3.5,
-    borderRadius: 2,
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
     backgroundColor: colors.gold,
-    marginHorizontal: 1.5,
+    marginLeft: 2,
+    marginTop: 1,
   },
-  photoDot: {
-    width: 3.5,
-    height: 3.5,
-    borderRadius: 2,
-    backgroundColor: colors.textSecondary,
-    marginHorizontal: 1.5,
+  indicatorRow: {
+    flexDirection: 'row',
+    gap: 2,
+    marginTop: 4,
+  },
+  indicator: {
+    width: 10,
+    height: 3,
+    borderRadius: 1.5,
   },
 });

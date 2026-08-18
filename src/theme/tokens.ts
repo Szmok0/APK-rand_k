@@ -3,6 +3,11 @@
 // Colors are taken from the client mockups: near-black background, warm gold accents,
 // and five mood colors used consistently for glyphs, runes, and the DNA glow.
 
+// Dwa różne złote (sekcja 13 MD v6, zmierzone bezpośrednio z mockupu/assetów) —
+// `colors.gold` to stonowany, "szampański" akcent UI (przyciski, obramowania,
+// nagłówki); `moodColors.BLISKOSC` to znacznie bardziej nasycony, neonowy złoty
+// używany wyłącznie do glow/mood. Nigdy ten sam token — inaczej strefa BLISKOŚĆ
+// traci swoją tożsamość wobec reszty interfejsu.
 export const colors = {
   background: '#05040A',
   backgroundElevated: '#0B0913',
@@ -13,16 +18,16 @@ export const colors = {
   textPrimary: '#F3EFE6',
   textSecondary: 'rgba(243, 239, 230, 0.64)',
   textFaint: 'rgba(243, 239, 230, 0.36)',
-  gold: '#E9B54D',
-  goldSoft: 'rgba(233, 181, 77, 0.24)',
-  goldGlow: 'rgba(233, 181, 77, 0.55)',
+  gold: '#D1A262',
+  goldSoft: 'rgba(209, 162, 98, 0.24)',
+  goldGlow: 'rgba(209, 162, 98, 0.55)',
 } as const;
 
 // Mood tags — the only thing in the app that is allowed to drive color/glow.
 export type MoodTag = 'BLISKOSC' | 'TESKNOTA' | 'NAMIETNOSC' | 'RADOSC' | 'NAPIECIE';
 
 export const moodColors: Record<MoodTag, string> = {
-  BLISKOSC: '#E9B54D', // złoty
+  BLISKOSC: '#F7BA1E', // złoty — neonowy, zmierzony z assetów (#EFA52C–#FFCF10)
   TESKNOTA: '#4DD8E0', // cyan / turkus
   NAMIETNOSC: '#E85FA6', // róż / magenta
   RADOSC: '#B07CF0', // fiolet

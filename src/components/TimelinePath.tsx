@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop } from 'react-native-svg';
 
 import { GLYPH_MAP } from '@/data/glyphs';
 import { GlyphCluster } from '@/components/GlyphCluster';
@@ -20,26 +20,39 @@ const SPACING_NORMAL = 92;
 const SPACING_DENSE = 40;
 const LABEL_GAP = 14;
 const MIN_LABEL_WIDTH = 84;
+const WAVE_FREQUENCY = 0.85; // stała, przewidywalna — "rzeka", nie przypadkowy wężyk (v4)
+
+let gradientCounter = 0;
 
 // Zakręcony timeline — jedna linia, jeden punkt = jeden dzień, stała odległość
-// między punktami (sekcja 7). Ligatura = wspólny glow dla wielu glifów jednego dnia.
-// Geometria (centerX, amplituda, szerokość etykiet) skaluje się do realnej
-// szerokości ekranu, żeby etykiety nigdy nie wychodziły poza widoczny obszar.
+// między punktami (sekcja 7). Styl (v3/v4 MD v6): gradient koloru wzdłuż linii
+// zależny od nastroju pobliskich wydarzeń, poświata wokół węzłów, leader-line
+// jednoznacznie łączący etykietę z jej punktem, łagodna/przewidywalna sinusoida.
 export function TimelinePath({ days, activityByDate, width, dense, onSelectDay }: Props) {
   const [tooltip, setTooltip] = useState<string | null>(null);
   const rowSpacing = dense ? SPACING_DENSE : SPACING_NORMAL;
   const centerX = width / 2;
   const amplitude = dense ? 0 : Math.min(26, width * 0.09);
   const labelWidth = Math.max(MIN_LABEL_WIDTH, centerX - amplitude - LABEL_GAP - 8);
+  const gradientId = useMemo(() => `timeline-gradient-${gradientCounter++}`, []);
 
   const points = useMemo(
     () =>
-      days.map((date, i) => ({
-        date,
-        x: centerX + amplitude * Math.sin(i * 1.05),
-        y: 24 + i * rowSpacing,
-      })),
-    [days, rowSpacing, centerX, amplitude]
+      days.map((date, i) => {
+        const activity = activityByDate.get(date);
+        const hasActivity = !!activity && activity.glyphIds.length > 0;
+        const dominantMood = activity?.glyphIds.map((id) => GLYPH_MAP[id]?.moodTag).find((m) => !!m);
+        const color = dominantMood ? moodColors[dominantMood] : colors.textFaint;
+        return {
+          date,
+          x: centerX + amplitude * Math.sin(i * WAVE_FREQUENCY),
+          y: 24 + i * rowSpacing,
+          hasActivity,
+          color,
+          important: !!activity && activity.importance === 2,
+        };
+      }),
+    [days, rowSpacing, centerX, amplitude, activityByDate]
   );
 
   const pathD = useMemo(() => {
@@ -59,46 +72,81 @@ export function TimelinePath({ days, activityByDate, width, dense, onSelectDay }
   return (
     <View style={{ width, height }}>
       <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
-        <Path d={pathD} stroke={colors.gold} strokeOpacity={0.35} strokeWidth={1.5} fill="none" />
-        {points.map((p) => {
-          const activity = activityByDate.get(p.date);
-          const hasActivity = !!activity && activity.glyphIds.length > 0;
-          const dominantMood = activity?.glyphIds
-            .map((id) => GLYPH_MAP[id]?.moodTag)
-            .find((m) => !!m);
-          const color = dominantMood ? moodColors[dominantMood] : colors.textFaint;
-          const important = activity && activity.importance === 2;
-          return (
-            <React.Fragment key={p.date}>
-              {important && (
-                <Circle
-                  cx={p.x}
-                  cy={p.y}
-                  r={dense ? 7 : 11}
-                  stroke={color}
-                  strokeOpacity={0.8}
-                  strokeDasharray="2 3"
-                  strokeWidth={1}
-                  fill="none"
-                />
-              )}
+        <Defs>
+          {/* Gradient wzdłuż linii — kolor podąża za nastrojem pobliskich wydarzeń,
+              nie jest jednolity (poprawka v3/v4). */}
+          <LinearGradient id={gradientId} x1={0} y1={0} x2={0} y2={height} gradientUnits="userSpaceOnUse">
+            {points.map((p, i) => (
+              <Stop
+                key={p.date}
+                offset={height > 0 ? p.y / height : i / Math.max(1, points.length - 1)}
+                stopColor={p.color}
+                stopOpacity={p.hasActivity ? 0.9 : 0.3}
+              />
+            ))}
+          </LinearGradient>
+        </Defs>
+
+        <Path d={pathD} stroke={`url(#${gradientId})`} strokeWidth={2} fill="none" />
+
+        {points.map((p) => (
+          <React.Fragment key={p.date}>
+            {p.hasActivity && (
+              <>
+                {/* poświata (halo) wokół węzła — warstwy o malejącej nieprzezroczystości */}
+                <Circle cx={p.x} cy={p.y} r={dense ? 8 : 14} fill={p.color} opacity={0.12} />
+                <Circle cx={p.x} cy={p.y} r={dense ? 5 : 9} fill={p.color} opacity={0.22} />
+              </>
+            )}
+            {p.important && (
               <Circle
                 cx={p.x}
                 cy={p.y}
-                r={hasActivity ? (dense ? 3.5 : 5) : dense ? 1.6 : 2.5}
-                fill={hasActivity ? color : colors.textFaint}
-                opacity={hasActivity ? 0.95 : 0.4}
+                r={dense ? 7 : 11}
+                stroke={p.color}
+                strokeOpacity={0.8}
+                strokeDasharray="2 3"
+                strokeWidth={1}
+                fill="none"
               />
-            </React.Fragment>
-          );
-        })}
+            )}
+            <Circle
+              cx={p.x}
+              cy={p.y}
+              r={p.hasActivity ? (dense ? 3.5 : 5) : dense ? 1.6 : 2.5}
+              fill={p.hasActivity ? p.color : colors.textFaint}
+              opacity={p.hasActivity ? 0.95 : 0.4}
+            />
+          </React.Fragment>
+        ))}
+
+        {/* Leader line — krótki łącznik od punktu do etykiety, żeby przypisanie
+            daty do punktu było jednoznaczne (poprawka v4), nigdy "wisząca" etykieta. */}
+        {!dense &&
+          points.map((p, i) => {
+            const isRight = Math.sin(i * WAVE_FREQUENCY) >= 0;
+            const nodeR = p.hasActivity ? 5 : 2.5;
+            const x2 = isRight ? p.x + nodeR + LABEL_GAP - 2 : p.x - nodeR - LABEL_GAP + 2;
+            return (
+              <Line
+                key={`leader-${p.date}`}
+                x1={isRight ? p.x + nodeR : p.x - nodeR}
+                y1={p.y}
+                x2={x2}
+                y2={p.y}
+                stroke={p.color}
+                strokeOpacity={0.45}
+                strokeWidth={1}
+              />
+            );
+          })}
       </Svg>
 
       {points.map((p, i) => {
         const activity = activityByDate.get(p.date);
         const d = fromDateKey(p.date);
         const label = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`;
-        const isRight = Math.sin(i * 1.05) >= 0;
+        const isRight = Math.sin(i * WAVE_FREQUENCY) >= 0;
         const labelLeft = isRight
           ? Math.min(width - labelWidth - 4, p.x + amplitude + LABEL_GAP)
           : Math.max(4, p.x - amplitude - LABEL_GAP - labelWidth);

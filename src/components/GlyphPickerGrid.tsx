@@ -29,7 +29,7 @@ export function GlyphPickerGrid({ selected, onToggle }: Props) {
                     onPress={() => onToggle(g.id)}
                     style={[styles.item, active && styles.itemActive]}
                   >
-                    <GlyphIcon glyphId={g.id} size={24} moodTag={g.moodTag} dim={!active && selected.length > 0} />
+                    <GlyphIcon glyphId={g.id} size={24} dim={!active && selected.length > 0} />
                     <Text style={styles.itemLabel} numberOfLines={1}>
                       {g.name}
                     </Text>
@@ -68,9 +68,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
   },
+  // Jedyny dopuszczalny wyjątek od zasady globalnej (v6): obrys/poświata wokół
+  // zaznaczonego glifu — NIGDY wypełnione tło (tylko `borderColor`, bez `backgroundColor`).
   itemActive: {
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.goldSoft,
+    borderColor: colors.gold,
   },
   itemLabel: {
     color: colors.textSecondary,
