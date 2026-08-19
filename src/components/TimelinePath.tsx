@@ -186,10 +186,19 @@ export function TimelinePath({ days, activityByDate, width, dense, onSelectDay }
               </Pressable>
             )}
 
+            {/* Widok miesięczny: tap na punkt pokazuje tooltip z datą (sekcja 7 MD);
+                tap na sam tooltip otwiera pełny szczegół dnia — bez tego drugi krok
+                był dostępny wyłącznie przez niewidoczny long-press. */}
             {dense && tooltip === p.date && (
-              <View style={[styles.tooltip, { top: p.y - 22, left: p.x - 20 }]}>
+              <Pressable
+                style={[styles.tooltip, { top: p.y - 30, left: Math.min(width - 100, Math.max(4, p.x - 44)) }]}
+                onPress={() => onSelectDay(p.date)}
+              >
                 <Text style={styles.tooltipText}>{label}</Text>
-              </View>
+                {activity && activity.glyphIds.length > 0 && (
+                  <Text style={styles.tooltipLink}>Zobacz dzień ›</Text>
+                )}
+              </Pressable>
             )}
           </React.Fragment>
         );
@@ -226,9 +235,17 @@ const styles = StyleSheet.create({
   tooltip: {
     position: 'absolute',
     backgroundColor: colors.surfaceAlt,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  tooltipLink: {
+    color: colors.gold,
+    fontSize: 9,
+    fontWeight: '700',
+    marginTop: 2,
   },
   tooltipText: {
     color: colors.textPrimary,

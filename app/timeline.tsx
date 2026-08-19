@@ -3,7 +3,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { LayoutChangeEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { TimelinePath } from '@/components/TimelinePath';
 import { Header, Screen } from '@/components/ui';
@@ -13,12 +13,16 @@ import { monthGrid, monthLabel, weekDays } from '@/utils/dates';
 
 type Mode = 'week' | 'month';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const PATH_WIDTH = SCREEN_WIDTH - spacing.md * 2;
-
 export default function TimelineScreen() {
   const { activities } = useRelationship();
   const [mode, setMode] = useState<Mode>('week');
+  // Zmierzona z realnego layoutu, nie z Dimensions.get('window') — na web appka
+  // bywa renderowana wewnątrz węższej ramki niż surowa szerokość okna przeglądarki
+  // (patrz app/_layout.tsx), więc Dimensions dawał złą, za dużą wartość i cała
+  // ścieżka rysowała się poza widocznym obszarem.
+  const [pathWidth, setPathWidth] = useState(0);
+  const onContentLayout = (e: LayoutChangeEvent) =>
+    setPathWidth(e.nativeEvent.layout.width - spacing.md * 2); // odejmujemy paddingHorizontal z contentContainerStyle
   const [weekOffset, setWeekOffset] = useState(0);
   const now = new Date();
   const [monthCursor, setMonthCursor] = useState({ year: now.getFullYear(), month: now.getMonth() });
@@ -98,14 +102,16 @@ export default function TimelineScreen() {
         )}
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <TimelinePath
-          days={days}
-          activityByDate={activityByDate}
-          width={PATH_WIDTH}
-          dense={mode === 'month'}
-          onSelectDay={(date) => router.push({ pathname: '/day/[date]', params: { date } })}
-        />
+      <ScrollView contentContainerStyle={styles.content} onLayout={onContentLayout}>
+        {pathWidth > 0 && (
+          <TimelinePath
+            days={days}
+            activityByDate={activityByDate}
+            width={pathWidth}
+            dense={mode === 'month'}
+            onSelectDay={(date) => router.push({ pathname: '/day/[date]', params: { date } })}
+          />
+        )}
       </ScrollView>
 
       <View style={styles.legend}>
