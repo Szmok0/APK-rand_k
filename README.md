@@ -3,14 +3,33 @@
 Implementacja aplikacji „Relacyjny Kalendarz Piktograficzny”. Spec: `docs/MVP_relacyjny_kalendarz_v6.md`
 (obowiązująca — patrz też `AGENTS.md`). Expo (React Native) + TypeScript + expo-router.
 
-## Uruchomienie
+## Uruchomienie — podgląd przez Expo Go (najszybsze)
 
 ```bash
 npm install
-npm run start      # Expo Dev Tools — zeskanuj kod w Expo Go
-npm run android     # emulator/urządzenie Android
-npm run ios         # symulator iOS (macOS)
+npx expo start          # zeskanuj kod QR aparatem / appką Expo Go na telefonie
+npx expo start --tunnel # jeśli telefon i komputer nie są w tej samej sieci Wi-Fi
 ```
+
+Ograniczenie: Expo Go pokazuje appkę pod swoją ikoną i nie honoruje w pełni
+natywnego boot-splasha (`expo-splash-screen`) — do tego potrzebny jest build
+poniżej.
+
+## Prawdziwy, instalowalny build (EAS Build)
+
+Wymaga darmowego konta na [expo.dev](https://expo.dev) i `eas-cli`:
+
+```bash
+npm install -g eas-cli
+eas login
+eas build -p android --profile preview   # buduje .apk, link do pobrania na koniec
+```
+
+`eas.json` (profil `preview`, buduje `.apk` do instalacji bezpośrednio na
+telefonie, bez sklepu) i `android.package`/`ios.bundleIdentifier` w
+`app.json` (`com.zuzdiary.app`) są już przygotowane — pierwsze uruchomienie
+`eas build` może jeszcze zapytać o utworzenie/połączenie projektu na Twoim
+koncie Expo (`eas init`), potem już nie.
 
 ## Struktura
 

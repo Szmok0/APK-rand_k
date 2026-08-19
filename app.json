@@ -11,11 +11,13 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.zuzdiary.app",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "Zu'z Diary potrzebuje dostępu do galerii, żeby dodać zdjęcie do wspomnienia."
       }
     },
     "android": {
+      "package": "com.zuzdiary.app",
       "adaptiveIcon": {
         "backgroundColor": "#05040A",
         "foregroundImage": "./assets/android-icon-foreground.png",
