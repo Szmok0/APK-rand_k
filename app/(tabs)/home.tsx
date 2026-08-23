@@ -1,6 +1,12 @@
 // HOME — Case Overview (HOME_APPROVED_TECH_SPEC.md). Reuses the existing summary
 // engine and Activity data; only the visual language and copy changed. Dynamic
 // stats/status/quote are code-driven — never baked into the background image.
+//
+// Visual language matches the approved mockup as closely as the delivered
+// assets allow: profile_frame.png / tape_piece.png / stamp_confidential.png
+// were extracted (checkerboard-key, same technique as the original glyph
+// alpha fix) from the mockup's own asset-legend composite — real artwork,
+// not a code-drawn approximation.
 
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -22,7 +28,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
   const stats = useMemo(() => computeHomeStats(activities), [activities]);
-  const status = useMemo(() => caseStatus(), []);
+  const microStatus = useMemo(() => caseStatus(), []);
   const quote = useMemo(() => dailyQuote(), []);
 
   if (loading) return <Screen />;
@@ -57,27 +63,44 @@ export default function HomeScreen() {
             <Ionicons name="settings-outline" size={20} color={colors.textSecondary} />
           </Pressable>
         </View>
-        <View style={styles.confidentialStamp}>
-          <Text style={styles.confidentialText}>CONFIDENTIAL</Text>
-        </View>
+        <Image
+          source={require('../../assets/noir/home/stamp_confidential.png')}
+          style={styles.confidentialStamp}
+          resizeMode="contain"
+        />
 
-        <View style={styles.profileFrame}>
-          {caseMeta.profilePhotoUri ? (
-            <Image source={{ uri: caseMeta.profilePhotoUri }} style={styles.profilePhoto} />
-          ) : (
-            <View style={styles.profilePlaceholder}>
-              <Ionicons name="person-outline" size={48} color={colors.textFaint} />
-            </View>
-          )}
+        <View style={styles.profileWrap}>
+          <View style={styles.profileInner}>
+            {caseMeta.profilePhotoUri ? (
+              <Image source={{ uri: caseMeta.profilePhotoUri }} style={styles.profilePhoto} />
+            ) : (
+              <View style={styles.profilePlaceholder}>
+                <Ionicons name="person-outline" size={40} color={colors.textFaint} />
+              </View>
+            )}
+          </View>
+          <Image
+            source={require('../../assets/noir/home/profile_frame.png')}
+            style={styles.profileFrameArt}
+            resizeMode="stretch"
+          />
+          <Image
+            source={require('../../assets/noir/home/tape_piece.png')}
+            style={styles.tapeAccent}
+            resizeMode="contain"
+          />
           <Text style={styles.aliasText}>{caseMeta.alias}</Text>
         </View>
 
         <Text style={styles.statusLabel}>STATUS</Text>
-        <View style={styles.statusRow}>
-          <Text style={styles.statusText} numberOfLines={2}>
-            {status}
-          </Text>
+        <View style={styles.statusHeadRow}>
+          <Text style={styles.statusFixed}>UNDER OBSERVATION</Text>
           <View style={styles.statusDot} />
+        </View>
+        <View style={styles.statusNote}>
+          <Text style={styles.statusNoteText} numberOfLines={2}>
+            {microStatus}
+          </Text>
         </View>
 
         <Pressable style={styles.contactRow} onPress={() => router.push('/settings')}>
@@ -86,7 +109,9 @@ export default function HomeScreen() {
           <Text style={styles.contactValue}>{caseMeta.firstContactDate}</Text>
         </Pressable>
 
-        <Text style={styles.sectionLabel}>CASE OVERVIEW</Text>
+        <View style={styles.sectionTag}>
+          <Text style={styles.sectionTagText}>CASE OVERVIEW</Text>
+        </View>
         <View style={styles.statsRow}>
           {statDefs.map((s) => (
             <View style={styles.statItem} key={s.label}>
@@ -97,9 +122,10 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        <Text style={styles.sectionLabel}>TODAY'S DOSSIER</Text>
         <View style={styles.quoteBox}>
+          <Text style={styles.quoteMark}>{'“'}</Text>
           <Text style={styles.quoteText}>{quote}</Text>
+          <Text style={styles.quoteSignature}>— Z.</Text>
         </View>
 
         <GoldButton
@@ -121,7 +147,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   scrim: {
-    backgroundColor: 'rgba(12, 10, 8, 0.62)',
+    backgroundColor: 'rgba(12, 10, 8, 0.74)',
   },
   content: {
     paddingHorizontal: spacing.lg,
@@ -145,39 +171,50 @@ const styles = StyleSheet.create({
   },
   confidentialStamp: {
     alignSelf: 'flex-end',
-    borderWidth: 1.5,
-    borderColor: colors.red,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    width: 84,
+    height: 50,
     marginTop: spacing.xs,
-    transform: [{ rotate: '-4deg' }],
+    marginRight: -spacing.xs,
   },
-  confidentialText: {
-    ...typography.stamp,
-    color: colors.red,
-    fontSize: 10,
-  },
-  profileFrame: {
+  profileWrap: {
     alignItems: 'center',
-    marginTop: spacing.lg,
+    marginTop: spacing.md,
+  },
+  profileInner: {
+    width: 118,
+    height: 118,
+    marginTop: 10,
+    marginBottom: 10,
   },
   profilePhoto: {
-    width: 132,
-    height: 132,
-    borderRadius: radius.md,
-    borderWidth: 2,
-    borderColor: colors.paper,
+    width: '100%',
+    height: '100%',
+    borderRadius: radius.sm,
   },
   profilePlaceholder: {
-    width: 132,
-    height: 132,
-    borderRadius: radius.md,
-    borderWidth: 2,
-    borderColor: colors.paper,
+    width: '100%',
+    height: '100%',
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface,
+  },
+  // The frame art sits ON TOP of the photo, slightly oversized, so its torn/
+  // taped border overlaps the photo edges instead of leaving a gap.
+  profileFrameArt: {
+    position: 'absolute',
+    top: 0,
+    width: 148,
+    height: 138,
+  },
+  tapeAccent: {
+    position: 'absolute',
+    top: -14,
+    right: 12,
+    width: 40,
+    height: 28,
+    transform: [{ rotate: '18deg' }],
+    opacity: 0.9,
   },
   aliasText: {
     ...typography.title,
@@ -190,23 +227,38 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     marginTop: spacing.lg,
   },
-  statusRow: {
+  statusHeadRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
     marginTop: 4,
   },
-  statusText: {
-    color: colors.gold,
+  statusFixed: {
+    color: colors.red,
     fontWeight: '700',
-    fontSize: 14,
-    flex: 1,
+    fontSize: 15,
+    letterSpacing: 0.5,
   },
   statusDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
     backgroundColor: colors.red,
+  },
+  statusNote: {
+    marginTop: spacing.xs,
+    backgroundColor: colors.paper,
+    borderRadius: 3,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    alignSelf: 'flex-start',
+    maxWidth: '90%',
+    transform: [{ rotate: '-0.6deg' }],
+  },
+  statusNoteText: {
+    color: colors.textOnPaper,
+    fontSize: 11,
+    lineHeight: 15,
   },
   contactRow: {
     flexDirection: 'row',
@@ -231,12 +283,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  sectionLabel: {
-    ...typography.caption,
-    color: colors.textFaint,
-    letterSpacing: 1.5,
+  sectionTag: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.paper,
+    borderRadius: 3,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
+    transform: [{ rotate: '-0.8deg' }],
+  },
+  sectionTagText: {
+    ...typography.caption,
+    color: colors.textOnPaper,
+    letterSpacing: 1.5,
+    fontWeight: '700',
   },
   statsRow: {
     flexDirection: 'row',
@@ -264,15 +325,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   quoteBox: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
+    backgroundColor: colors.paper,
+    borderRadius: 4,
     padding: spacing.md,
+    marginTop: spacing.lg,
+  },
+  quoteMark: {
+    color: colors.paperDark,
+    fontSize: 28,
+    fontWeight: '700',
+    lineHeight: 24,
+    marginBottom: -4,
   },
   quoteText: {
-    color: colors.textPrimary,
+    color: colors.textOnPaper,
     fontStyle: 'italic',
     lineHeight: 20,
+  },
+  quoteSignature: {
+    color: colors.red,
+    fontSize: 13,
+    fontWeight: '700',
+    alignSelf: 'flex-end',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
 });
