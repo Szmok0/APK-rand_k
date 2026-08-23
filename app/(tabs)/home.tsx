@@ -1,14 +1,16 @@
-// HOME — Case Overview (HOME_APPROVED_TECH_SPEC.md). Reuses the existing summary
-// engine and Activity data; only the visual language and copy changed. Dynamic
-// stats/status/quote are code-driven — never baked into the background image.
+// HOME — Case Overview. Rebuilt to match the full layout map the product owner
+// sent (exact positions for photo/status/stats/quote, with explicit
+// placeholder markers for every piece of dynamic content: dashed boxes for
+// values, a blank bracket-cornered card for the rotating status note, a black
+// rectangle for the photo). Dashed-border "data readout" boxes are kept as a
+// real, permanent style for dynamic values (not just a wireframe annotation)
+// — it's a deliberate, consistently-repeated visual language in the map.
 //
-// Visual language matches the approved mockup as closely as the delivered
-// assets allow: profile_frame.png / tape_piece.png / stamp_confidential.png
-// were extracted (checkerboard-key, same technique as the original glyph
-// alpha fix) from the mockup's own asset-legend composite — real artwork,
-// not a code-drawn approximation.
+// Top header reuses the same cover art as the Cover screen (identical
+// jungle/dino/title composition in the map) — no separate asset was needed.
 
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useMemo } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -21,7 +23,31 @@ import { computeHomeStats } from '@/engine/summary';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 
+const HEADER_HEIGHT = 190;
+
 type StatDef = { icon: keyof typeof Ionicons.glyphMap; value: string; label: string };
+
+// Small reusable "data readout" frame — dashed red border, used for every
+// dynamic value (stat numbers, first-contact date) per the approved map.
+function DataBox({ children, style }: { children: React.ReactNode; style?: any }) {
+  return (
+    <View style={[styles.dataBox, style]}>
+      <Text style={styles.dataBoxText}>{children}</Text>
+    </View>
+  );
+}
+
+// Thin red L-shaped corner accents on the status note card.
+function CornerBrackets() {
+  return (
+    <>
+      <View style={[styles.bracket, styles.bracketTL]} />
+      <View style={[styles.bracket, styles.bracketTR]} />
+      <View style={[styles.bracket, styles.bracketBL]} />
+      <View style={[styles.bracket, styles.bracketBR]} />
+    </>
+  );
+}
 
 export default function HomeScreen() {
   const { activities, caseMeta, loading } = useRelationship();
@@ -42,156 +68,165 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <Image
-        source={require('../../assets/noir/backgrounds/desk_bg.jpg')}
-        style={[StyleSheet.absoluteFill, styles.backgroundImage]}
-        resizeMode="cover"
-      />
-      <View style={[StyleSheet.absoluteFill, styles.scrim]} />
-
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xl },
-        ]}
-      >
-        <View style={styles.topRow}>
-          <View style={styles.caseNumberBadge}>
-            <Text style={styles.caseNumberText}>CASE No. {caseMeta.caseNumber}</Text>
-          </View>
-          <Pressable onPress={() => router.push('/settings')} hitSlop={12}>
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}>
+        <View style={styles.header}>
+          <Image
+            source={require('../../assets/noir/home/header_banner.jpg')}
+            style={[StyleSheet.absoluteFill, styles.headerImage]}
+            resizeMode="contain"
+          />
+          <LinearGradient
+            colors={['transparent', colors.background]}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          />
+          <Pressable
+            style={[styles.settingsBtn, { top: insets.top + spacing.xs }]}
+            onPress={() => router.push('/settings')}
+            hitSlop={12}
+          >
             <Ionicons name="settings-outline" size={20} color={colors.textSecondary} />
           </Pressable>
         </View>
-        <Image
-          source={require('../../assets/noir/home/stamp_confidential.png')}
-          style={styles.confidentialStamp}
-          resizeMode="contain"
-        />
 
-        <View style={styles.profileWrap}>
-          <View style={styles.profileInner}>
-            {caseMeta.profilePhotoUri ? (
-              <Image source={{ uri: caseMeta.profilePhotoUri }} style={styles.profilePhoto} />
-            ) : (
-              <View style={styles.profilePlaceholder}>
-                <Ionicons name="person-outline" size={40} color={colors.textFaint} />
+        <View style={styles.content}>
+          <View style={styles.topSection}>
+            {/* Photo stack */}
+            <View style={styles.photoCol}>
+              <View style={[styles.photoBacking, { transform: [{ rotate: '-6deg' }] }]} />
+              <View style={[styles.photoBacking, { transform: [{ rotate: '4deg' }] }]} />
+              <View style={styles.photoStack}>
+                {caseMeta.profilePhotoUri ? (
+                  <Image source={{ uri: caseMeta.profilePhotoUri }} style={styles.photo} />
+                ) : (
+                  <View style={styles.photoPlaceholder}>
+                    <Ionicons name="person-outline" size={36} color={colors.textFaint} />
+                  </View>
+                )}
+                <Image
+                  source={require('../../assets/noir/home/profile_frame.png')}
+                  style={styles.frameArt}
+                  resizeMode="stretch"
+                />
+                <Text style={styles.aliasCaption}>{caseMeta.alias}</Text>
               </View>
-            )}
-          </View>
-          <Image
-            source={require('../../assets/noir/home/profile_frame.png')}
-            style={styles.profileFrameArt}
-            resizeMode="stretch"
-          />
-          <Image
-            source={require('../../assets/noir/home/tape_piece.png')}
-            style={styles.tapeAccent}
-            resizeMode="contain"
-          />
-          <Text style={styles.aliasText}>{caseMeta.alias}</Text>
-        </View>
-
-        <Text style={styles.statusLabel}>STATUS</Text>
-        <View style={styles.statusHeadRow}>
-          <Text style={styles.statusFixed}>UNDER OBSERVATION</Text>
-          <View style={styles.statusDot} />
-        </View>
-        <View style={styles.statusNote}>
-          <Text style={styles.statusNoteText} numberOfLines={2}>
-            {microStatus}
-          </Text>
-        </View>
-
-        <Pressable style={styles.contactRow} onPress={() => router.push('/settings')}>
-          <Ionicons name="calendar-outline" size={14} color={colors.textFaint} />
-          <Text style={styles.contactLabel}>FIRST CONTACT</Text>
-          <Text style={styles.contactValue}>{caseMeta.firstContactDate}</Text>
-        </Pressable>
-
-        <View style={styles.sectionTag}>
-          <Text style={styles.sectionTagText}>CASE OVERVIEW</Text>
-        </View>
-        <View style={styles.statsRow}>
-          {statDefs.map((s) => (
-            <View style={styles.statItem} key={s.label}>
-              <Ionicons name={s.icon} size={16} color={colors.gold} style={{ marginBottom: 6 }} />
-              <Text style={styles.statValue}>{s.value}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
+              <Image
+                source={require('../../assets/noir/home/paperclip.png')}
+                style={styles.paperclipTop}
+                resizeMode="contain"
+              />
+              <Image
+                source={require('../../assets/noir/home/paperclip.png')}
+                style={styles.paperclipBottom}
+                resizeMode="contain"
+              />
             </View>
-          ))}
-        </View>
 
-        <View style={styles.quoteBox}>
-          <Text style={styles.quoteMark}>{'“'}</Text>
-          <Text style={styles.quoteText}>{quote}</Text>
-          <Text style={styles.quoteSignature}>— Z.</Text>
-        </View>
+            {/* Status + first contact */}
+            <View style={styles.statusCol}>
+              <Text style={styles.statusLabel}>STATUS</Text>
+              <View style={styles.statusHeadRow}>
+                <Text style={styles.statusFixed}>UNDER OBSERVATION</Text>
+                <View style={styles.statusDot} />
+              </View>
 
-        <GoldButton
-          label="+ Add Activity"
-          onPress={() => router.push('/add-activity')}
-          style={{ marginTop: spacing.lg }}
-        />
+              <View style={styles.noteCard}>
+                <CornerBrackets />
+                <Text style={styles.noteCardText} numberOfLines={4}>
+                  {microStatus}
+                </Text>
+              </View>
+
+              <View style={styles.contactCard}>
+                <View style={styles.contactHeadRow}>
+                  <Ionicons name="calendar-outline" size={16} color={colors.textPrimary} />
+                  <Text style={styles.contactLabel}>FIRST CONTACT</Text>
+                </View>
+                <DataBox style={styles.contactValueBox}>{caseMeta.firstContactDate}</DataBox>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.sectionTag}>
+            <Text style={styles.sectionTagText}>CASE OVERVIEW</Text>
+          </View>
+
+          <View style={styles.statsRow}>
+            {statDefs.map((s) => (
+              <View style={styles.statCard} key={s.label}>
+                <View style={styles.statCorner} />
+                <Ionicons name={s.icon} size={20} color={colors.textPrimary} style={{ marginBottom: spacing.sm }} />
+                <DataBox style={styles.statValueBox}>{s.value}</DataBox>
+                <Text style={styles.statLabel}>{s.label}</Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.quoteBox}>
+            <View style={styles.quotePin} />
+            <Image
+              source={require('../../assets/noir/home/paperclip.png')}
+              style={styles.paperclipQuote}
+              resizeMode="contain"
+            />
+            <Text style={styles.quoteMark}>{'“'}</Text>
+            <Text style={styles.quoteText}>{quote}</Text>
+            <Text style={styles.quoteSignature}>— Z.</Text>
+          </View>
+
+          <GoldButton
+            label="+ Add Activity"
+            onPress={() => router.push('/add-activity')}
+            style={{ marginTop: spacing.lg }}
+          />
+        </View>
       </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  // `StyleSheet.absoluteFill` alone isn't enough on React Native Web — the
-  // image's intrinsic size wins over the absolute-position stretch without an
-  // explicit 100%/100% too (reproduced bug, see app/index.tsx for detail).
-  backgroundImage: {
+  header: {
+    height: HEADER_HEIGHT,
+  },
+  headerImage: {
     width: '100%',
     height: '100%',
   },
-  scrim: {
-    backgroundColor: 'rgba(12, 10, 8, 0.74)',
+  settingsBtn: {
+    position: 'absolute',
+    right: spacing.lg,
   },
   content: {
     paddingHorizontal: spacing.lg,
+    marginTop: -spacing.xl,
   },
-  topRow: {
+  topSection: {
     flexDirection: 'row',
+    gap: spacing.md,
+  },
+  photoCol: {
+    flex: 0.85,
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  caseNumberBadge: {
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+  photoBacking: {
+    position: 'absolute',
+    top: 6,
+    width: '84%',
+    height: '90%',
+    backgroundColor: colors.paperDark,
+    borderRadius: 4,
   },
-  caseNumberText: {
-    ...typography.stamp,
-    color: colors.textPrimary,
-    fontSize: 11,
+  photoStack: {
+    width: '84%',
+    aspectRatio: 0.82,
   },
-  confidentialStamp: {
-    alignSelf: 'flex-end',
-    width: 84,
-    height: 50,
-    marginTop: spacing.xs,
-    marginRight: -spacing.xs,
-  },
-  profileWrap: {
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  profileInner: {
-    width: 118,
-    height: 118,
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  profilePhoto: {
+  photo: {
     width: '100%',
     height: '100%',
     borderRadius: radius.sm,
   },
-  profilePlaceholder: {
+  photoPlaceholder: {
     width: '100%',
     height: '100%',
     borderRadius: radius.sm,
@@ -199,45 +234,61 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.surface,
   },
-  // The frame art sits ON TOP of the photo, slightly oversized, so its torn/
-  // taped border overlaps the photo edges instead of leaving a gap.
-  profileFrameArt: {
+  frameArt: {
     position: 'absolute',
-    top: 0,
-    width: 148,
-    height: 138,
+    top: -8,
+    left: '-8%',
+    width: '116%',
+    height: '112%',
   },
-  tapeAccent: {
+  aliasCaption: {
+    position: 'absolute',
+    bottom: -20,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    ...typography.heading,
+    color: colors.textOnPaper,
+  },
+  paperclipTop: {
     position: 'absolute',
     top: -14,
-    right: 12,
-    width: 40,
-    height: 28,
-    transform: [{ rotate: '18deg' }],
+    left: 6,
+    width: 34,
+    height: 34,
+    transform: [{ rotate: '-18deg' }],
+  },
+  paperclipBottom: {
+    position: 'absolute',
+    bottom: 34,
+    left: -6,
+    width: 30,
+    height: 30,
+    transform: [{ rotate: '96deg' }],
     opacity: 0.9,
   },
-  aliasText: {
-    ...typography.title,
-    color: colors.textPrimary,
-    marginTop: spacing.sm,
+  statusCol: {
+    flex: 1,
+    paddingTop: 6,
   },
   statusLabel: {
     ...typography.caption,
     color: colors.textFaint,
     letterSpacing: 1.5,
-    marginTop: spacing.lg,
   },
   statusHeadRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    marginTop: 4,
+    marginTop: 2,
+    marginBottom: spacing.sm,
   },
   statusFixed: {
     color: colors.red,
     fontWeight: '700',
-    fontSize: 15,
-    letterSpacing: 0.5,
+    fontSize: 13,
+    letterSpacing: 0.3,
+    flexShrink: 1,
   },
   statusDot: {
     width: 6,
@@ -245,97 +296,148 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: colors.red,
   },
-  statusNote: {
-    marginTop: spacing.xs,
-    backgroundColor: colors.paper,
-    borderRadius: 3,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    alignSelf: 'flex-start',
-    maxWidth: '90%',
-    transform: [{ rotate: '-0.6deg' }],
-  },
-  statusNoteText: {
-    color: colors.textOnPaper,
-    fontSize: 11,
-    lineHeight: 15,
-  },
-  contactRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.md,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    alignSelf: 'flex-start',
-  },
-  contactLabel: {
-    color: colors.textFaint,
-    fontSize: 10,
-    letterSpacing: 1,
-  },
-  contactValue: {
-    color: colors.textPrimary,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  sectionTag: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.paper,
-    borderRadius: 3,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-    transform: [{ rotate: '-0.8deg' }],
-  },
-  sectionTagText: {
-    ...typography.caption,
-    color: colors.textOnPaper,
-    letterSpacing: 1.5,
-    fontWeight: '700',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  noteCard: {
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
-    padding: spacing.md,
+    padding: spacing.sm,
+    minHeight: 66,
+    justifyContent: 'center',
   },
-  statItem: {
+  noteCardText: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  bracket: {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    borderColor: colors.red,
+  },
+  bracketTL: { top: 4, left: 4, borderTopWidth: 1.5, borderLeftWidth: 1.5 },
+  bracketTR: { top: 4, right: 4, borderTopWidth: 1.5, borderRightWidth: 1.5 },
+  bracketBL: { bottom: 4, left: 4, borderBottomWidth: 1.5, borderLeftWidth: 1.5 },
+  bracketBR: { bottom: 4, right: 4, borderBottomWidth: 1.5, borderRightWidth: 1.5 },
+  contactCard: {
+    marginTop: spacing.sm,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+  },
+  contactHeadRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    gap: 6,
+    marginBottom: spacing.xs,
   },
-  statValue: {
+  contactLabel: {
+    color: colors.textPrimary,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  contactValueBox: {
+    alignSelf: 'stretch',
+  },
+  dataBox: {
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.red,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+  },
+  dataBoxText: {
     ...typography.stat,
-    fontSize: 18,
-    color: colors.red,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  sectionTag: {
+    alignSelf: 'center',
+    backgroundColor: colors.paper,
+    borderRadius: 3,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 6,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+    transform: [{ rotate: '-0.6deg' }],
+  },
+  sectionTagText: {
+    ...typography.heading,
+    color: colors.textOnPaper,
+    letterSpacing: 1.5,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  statCorner: {
+    position: 'absolute',
+    top: -6,
+    left: -6,
+    width: 14,
+    height: 14,
+    backgroundColor: colors.red,
+    transform: [{ rotate: '45deg' }],
+  },
+  statValueBox: {
+    width: 40,
+    height: 30,
+    marginBottom: 6,
   },
   statLabel: {
     ...typography.caption,
-    fontSize: 9,
+    fontSize: 8.5,
     color: colors.textSecondary,
-    marginTop: 2,
     textAlign: 'center',
   },
   quoteBox: {
     backgroundColor: colors.paper,
     borderRadius: 4,
     padding: spacing.md,
+    paddingTop: spacing.lg,
     marginTop: spacing.lg,
+  },
+  quotePin: {
+    position: 'absolute',
+    top: 8,
+    left: 12,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.red,
+    opacity: 0.8,
+  },
+  paperclipQuote: {
+    position: 'absolute',
+    top: -10,
+    right: 16,
+    width: 30,
+    height: 30,
+    transform: [{ rotate: '8deg' }],
   },
   quoteMark: {
     color: colors.paperDark,
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '700',
-    lineHeight: 24,
-    marginBottom: -4,
+    lineHeight: 22,
+    marginBottom: -2,
   },
   quoteText: {
     color: colors.textOnPaper,
