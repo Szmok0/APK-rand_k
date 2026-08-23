@@ -53,6 +53,15 @@ const MONTH_NAMES = [
 ];
 
 const WEEKDAY_NAMES = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+const WEEKDAY_NAMES_FULL = [
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+  'SATURDAY',
+  'SUNDAY',
+];
 
 export function monthLabel(year: number, month: number): string {
   return `${MONTH_NAMES[month]} ${year}`;
@@ -65,6 +74,12 @@ export function weekdayLabels(): string[] {
 export function dayLabelShort(key: string): string {
   const d = fromDateKey(key);
   return WEEKDAY_NAMES[(d.getDay() + 6) % 7];
+}
+
+// 'MONDAY' style — used on the Case File ticket's date column.
+export function dayLabelFull(key: string): string {
+  const d = fromDateKey(key);
+  return WEEKDAY_NAMES_FULL[(d.getDay() + 6) % 7];
 }
 
 // 'MAY 26' style — used on the Case Day ticket header (Calendar) and exhibit dates.

@@ -10,6 +10,7 @@ import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { GLYPH_MAP } from '@/data/glyphs';
 import { GlyphIcon } from '@/components/GlyphIcon';
 import { GoldButton, OutlineButton } from '@/components/ui';
+import { DAY_BADGE_COLORS, DAY_BADGE_ICONS, dayBadges } from '@/engine/dayBadges';
 import * as Sharing from 'expo-sharing';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, priorityColors, priorityLabels, radius, spacing, typography } from '@/theme/tokens';
@@ -62,8 +63,38 @@ export function DayDetailPanel({ date }: Props) {
     );
   }
 
+  const badges = dayBadges(activity);
+
   return (
     <View>
+      {badges.length > 0 && (
+        <View style={styles.badgeRow}>
+          {badges.map((key) => (
+            <View key={key} style={[styles.badge, { borderColor: DAY_BADGE_COLORS[key] }]}>
+              <Ionicons name={DAY_BADGE_ICONS[key]} size={13} color={DAY_BADGE_COLORS[key]} />
+              <Text style={[styles.badgeLabel, { color: DAY_BADGE_COLORS[key] }]}>{key}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      <View style={styles.readoutRow}>
+        <View style={styles.readoutBox}>
+          <Ionicons name="time-outline" size={14} color={colors.textFaint} />
+          <Text style={styles.readoutLabel}>TIME</Text>
+          <Text style={styles.readoutValue}>
+            {hours > 0 ? `${activity.startTime} – ${activity.endTime}` : '—'}
+          </Text>
+        </View>
+        <View style={styles.readoutBox}>
+          <Ionicons name="folder-outline" size={14} color={colors.textFaint} />
+          <Text style={styles.readoutLabel}>EVIDENCE</Text>
+          <Text style={styles.readoutValue}>
+            {activity.glyphIds.length} {activity.glyphIds.length === 1 ? 'ITEM' : 'ITEMS'}
+          </Text>
+        </View>
+      </View>
+
       <View style={styles.glyphRow}>
         {activity.glyphIds.map((id) => (
           <View key={id} style={styles.glyphItem}>
@@ -72,12 +103,6 @@ export function DayDetailPanel({ date }: Props) {
           </View>
         ))}
       </View>
-
-      {hours > 0 && (
-        <Text style={styles.time}>
-          {activity.startTime} — {activity.endTime}  ·  {hours}h
-        </Text>
-      )}
 
       {activity.importance > 0 && (
         <View style={[styles.priorityBadge, { borderColor: priorityColors[activity.importance] }]}>
@@ -134,10 +159,55 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
   },
+  badgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+  },
+  badgeLabel: {
+    ...typography.stamp,
+    fontSize: 9,
+  },
+  readoutRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  readoutBox: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+  },
+  readoutLabel: {
+    ...typography.caption,
+    color: colors.textFaint,
+    fontSize: 9,
+    letterSpacing: 1,
+    marginTop: 4,
+  },
+  readoutValue: {
+    color: colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
+  },
   glyphRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.md,
+    marginTop: spacing.lg,
   },
   glyphItem: {
     alignItems: 'center',
@@ -148,11 +218,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 4,
     textAlign: 'center',
-  },
-  time: {
-    color: colors.textSecondary,
-    marginTop: spacing.md,
-    fontSize: 13,
   },
   priorityBadge: {
     alignSelf: 'flex-start',

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -13,10 +14,10 @@ type Props = {
   activity?: Activity;
 };
 
-// Komórka dnia — sekcja 9 MD v6: maksymalnie minimalna. Numer dnia + JEDEN mały
-// kolorowy wskaźnik aktywności (nigdy pełna ikona glifu — komórka jest fizycznie
-// za mała, żeby zmieścić czytelną ikonę) + kropka notatki przy numerze. Treść
-// (glify, czas, zdjęcie) przenosi się do panelu podglądu pod siatką.
+// Day cell — kept deliberately minimal (CALENDAR_TECH_SPEC): number + up to 2
+// small colored dots (never a full glyph icon, the cell is physically too
+// small to render one legibly). Content (glyphs, time, photo) lives in the
+// detail panel below the grid, not in the cell.
 export function CalendarDayCell({ dayNumber, inMonth, isToday, isSelected, activity }: Props) {
   const moodTags = activity
     ? Array.from(
@@ -26,22 +27,24 @@ export function CalendarDayCell({ dayNumber, inMonth, isToday, isSelected, activ
 
   return (
     <View style={[styles.wrap, isSelected && styles.wrapSelected]}>
-      <View style={styles.numberRow}>
-        <Text
-          style={[
-            styles.dayNumber,
-            !inMonth && styles.dayNumberFaint,
-            isToday && styles.dayNumberToday,
-          ]}
-        >
-          {dayNumber}
-        </Text>
-        {activity?.note ? <View style={styles.noteDot} /> : null}
-      </View>
+      {isToday && (
+        <View style={styles.todayBadge}>
+          <Ionicons name="star" size={9} color={colors.gold} />
+        </View>
+      )}
+      <Text
+        style={[
+          styles.dayNumber,
+          !inMonth && styles.dayNumberFaint,
+          isToday && styles.dayNumberToday,
+        ]}
+      >
+        {dayNumber}
+      </Text>
 
       {moodTags.length > 0 && (
         <View style={styles.indicatorRow}>
-          {moodTags.slice(0, 3).map((tag) => (
+          {moodTags.slice(0, 2).map((tag) => (
             <View key={tag} style={[styles.indicator, { backgroundColor: moodColors[tag] }]} />
           ))}
         </View>
@@ -59,14 +62,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   wrapSelected: {
-    backgroundColor: colors.goldSoft,
-  },
-  numberRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    borderWidth: 1.5,
+    borderColor: colors.gold,
+    borderRadius: 10,
   },
   dayNumber: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textSecondary,
   },
   dayNumberFaint: {
@@ -76,22 +77,19 @@ const styles = StyleSheet.create({
     color: colors.gold,
     fontWeight: '700',
   },
-  noteDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: colors.gold,
-    marginLeft: 2,
-    marginTop: 1,
+  todayBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 4,
   },
   indicatorRow: {
     flexDirection: 'row',
-    gap: 2,
+    gap: 3,
     marginTop: 4,
   },
   indicator: {
-    width: 10,
-    height: 3,
-    borderRadius: 1.5,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
 });
