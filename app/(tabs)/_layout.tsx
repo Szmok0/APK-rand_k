@@ -4,8 +4,9 @@
 //
 // Custom tab bar: same "single flat image + minimal overlay" rule as Home
 // (see app/(tabs)/home.tsx) — assets/noir/home/tabbar_bg.jpg is the exact
-// bottom strip of the approved layout map (4 card slots, dashed icon square,
-// red underline glow, all baked in). Code overlays only the actual icon +
+// bottom strip of the approved layout map (4 plain card slots; the original
+// dashed icon square / red underline were annotation-only and are inpainted
+// out, same as Home's dashed boxes). Code overlays only the actual icon +
 // label per tab, positioned by percentage to match the 4 slots exactly.
 
 import { Ionicons } from '@expo/vector-icons';
@@ -44,11 +45,12 @@ const TAB_META: Record<string, { icon: keyof typeof Ionicons.glyphMap; label: st
   profiler: { icon: 'finger-print-outline', label: 'PROFILER' },
 };
 
-// Measured directly off the source composite: the dashed icon square's
-// vertical center and the red underline glow's vertical center, both as a
-// fraction of the SLOT's own height (not the whole strip) — see TAB_SLOTS.
-const ICON_CENTER_PCT = 50.7;
-const LABEL_CENTER_PCT = 90;
+// The dashed icon square / red underline that used to anchor these were
+// annotation-only and have been inpainted out of tabbar_bg.jpg (same "not
+// permanent UI" call as Home's dashed boxes) — the cards are now plain, so
+// icon/label position is just a reasonable split of each slot's height.
+const ICON_CENTER_PCT = 38;
+const LABEL_CENTER_PCT = 76;
 
 function CaseTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();

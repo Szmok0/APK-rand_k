@@ -19,8 +19,14 @@
 // earlier passes this replaces.
 //
 // The overlay container's aspectRatio matches home_bg.jpg's exact pixel ratio
-// (853x1510) so the image and every percentage-positioned overlay child
+// (853x1536) so the image and every percentage-positioned overlay child
 // always scale together, with zero coordinate drift across screen sizes.
+//
+// The red dashed boxes / brackets / corner flags from the original layout
+// map were only ever meant as "put data here" annotations, not permanent UI
+// — they've been inpainted out of the source composite (see the export
+// script this asset came from) so the cards read as plain, finished art
+// once the real values are overlaid.
 
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -39,7 +45,7 @@ import { colors, fonts } from '@/theme/tokens';
 // Exact pixel size of assets/noir/home/home_bg.jpg — keep in sync if it's
 // ever re-cropped.
 const BG_W = 853;
-const BG_H = 1510;
+const BG_H = 1536;
 const ASPECT = BG_W / BG_H;
 
 // All percentages below were measured directly off the source composite
@@ -61,8 +67,10 @@ const ZONES = {
 
 function pct(x: number, y: number, w: number, h: number) {
   // Source pixel coords are relative to the full wireframe; home_bg.jpg was
-  // cropped starting at y=90, so subtract that before converting to %.
-  const CROP_TOP = 90;
+  // cropped starting at y=64 (right after the status-bar mockup row, before
+  // the ZUZA title's top stroke — cropping any lower clips the letters), so
+  // subtract that before converting to %.
+  const CROP_TOP = 64;
   return {
     left: `${(x / BG_W) * 100}%`,
     top: `${((y - CROP_TOP) / BG_H) * 100}%`,
@@ -100,7 +108,7 @@ export default function HomeScreen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={{ height: insets.top + 20 }} />
+        <View style={{ height: insets.top + 36 }} />
         <View style={styles.bgContainer}>
           <Image
             source={require('../../assets/noir/home/home_bg.jpg')}
@@ -126,12 +134,12 @@ export default function HomeScreen() {
           </View>
 
           <View style={[styles.zone, ZONES.firstContact]}>
-            <Text style={styles.dataText}>{caseMeta.firstContactDate}</Text>
+            <Text style={styles.firstContactText}>{caseMeta.firstContactDate}</Text>
           </View>
 
           {ZONES.stat.map((z, i) => (
             <View key={i} style={[styles.zone, z]}>
-              <Text style={styles.dataText}>{statValues[i]}</Text>
+              <Text style={styles.statNumberText}>{statValues[i]}</Text>
             </View>
           ))}
 
@@ -189,11 +197,20 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     paddingHorizontal: 8,
   },
-  dataText: {
+  // First-contact date sits in a much smaller box than the stat numbers —
+  // it's a single short label-like value, not a headline stat.
+  firstContactText: {
+    color: colors.textPrimary,
+    fontFamily: fonts.display,
+    fontWeight: '400',
+    letterSpacing: 0.5,
+    fontSize: 13,
+  },
+  statNumberText: {
     color: colors.textPrimary,
     fontFamily: fonts.display,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 21,
   },
   quoteText: {
     color: colors.textOnPaper,
