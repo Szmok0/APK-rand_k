@@ -52,10 +52,16 @@ const TAB_META: Record<string, { icon: keyof typeof Ionicons.glyphMap; label: st
 const ICON_CENTER_PCT = 38;
 const LABEL_CENTER_PCT = 76;
 
+// Always reserve at least this much below the bar, even if a device somehow
+// reports a 0/near-0 bottom inset (safe-area-context can't be verified from
+// this sandbox — there's no physical home indicator/gesture bar to measure
+// in a browser) — real device insets, which are usually taller, still win.
+const MIN_BOTTOM_SAFE_PAD = 16;
+
 function CaseTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.wrap, { paddingBottom: insets.bottom }]}>
+    <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, MIN_BOTTOM_SAFE_PAD) }]}>
       <View style={styles.bgContainer}>
         <Image
           source={require('../../assets/noir/home/tabbar_bg.jpg')}
