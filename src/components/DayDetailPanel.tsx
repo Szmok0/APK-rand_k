@@ -10,7 +10,7 @@ import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { GLYPH_MAP } from '@/data/glyphs';
 import { GlyphIcon } from '@/components/GlyphIcon';
 import { GoldButton, OutlineButton } from '@/components/ui';
-import { DAY_BADGE_COLORS, DAY_BADGE_ICONS, dayBadges } from '@/engine/dayBadges';
+import { DAY_BADGE_COLORS, DAY_BADGE_IMAGES, dayBadges } from '@/engine/dayBadges';
 import * as Sharing from 'expo-sharing';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, priorityColors, priorityLabels, radius, spacing, typography } from '@/theme/tokens';
@@ -70,8 +70,8 @@ export function DayDetailPanel({ date }: Props) {
       {badges.length > 0 && (
         <View style={styles.badgeRow}>
           {badges.map((key) => (
-            <View key={key} style={[styles.badge, { borderColor: DAY_BADGE_COLORS[key] }]}>
-              <Ionicons name={DAY_BADGE_ICONS[key]} size={13} color={DAY_BADGE_COLORS[key]} />
+            <View key={key} style={styles.badge}>
+              <Image source={DAY_BADGE_IMAGES[key]} style={styles.badgeImage} />
               <Text style={[styles.badgeLabel, { color: DAY_BADGE_COLORS[key] }]}>{key}</Text>
             </View>
           ))}
@@ -125,6 +125,11 @@ export function DayDetailPanel({ date }: Props) {
         ) : (
           <Text style={styles.noNote}>No written statement attached.</Text>
         )}
+        <Image
+          source={require('../../assets/noir/calendar/tape_piece.png')}
+          style={styles.noteBoxTape}
+          resizeMode="contain"
+        />
       </View>
 
       <View style={styles.actions}>
@@ -165,17 +170,19 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   badge: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    borderWidth: 1,
+    width: 52,
+  },
+  badgeImage: {
+    width: 32,
+    height: 32,
     borderRadius: radius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 5,
   },
   badgeLabel: {
     ...typography.stamp,
-    fontSize: 9,
+    fontSize: 8,
+    marginTop: 3,
+    textAlign: 'center',
   },
   readoutRow: {
     flexDirection: 'row',
@@ -185,8 +192,8 @@ const styles = StyleSheet.create({
   readoutBox: {
     flex: 1,
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
     borderRadius: radius.md,
     padding: spacing.sm,
   },
@@ -241,10 +248,18 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
     padding: spacing.md,
     alignItems: 'flex-start',
+  },
+  noteBoxTape: {
+    position: 'absolute',
+    right: -10,
+    bottom: -10,
+    width: 60,
+    height: 30,
+    transform: [{ rotate: '-8deg' }],
   },
   noteBoxLabel: {
     color: colors.textFaint,

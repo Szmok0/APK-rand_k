@@ -73,27 +73,32 @@ export default function CalendarScreen() {
         />
       </View>
 
-      <View style={styles.ticket}>
-        <Ionicons name="attach" size={18} color={colors.textOnPaper} style={styles.ticketPaperclip} />
+      <View style={styles.ticketOuter}>
+        <View style={styles.ticketImgWrap}>
+          <Image
+            source={require('../../assets/noir/calendar/ticket_blank.png')}
+            style={styles.ticketImg}
+          />
 
-        <View style={styles.ticketDateCol}>
-          <Text style={styles.ticketMonth}>{MONTH_ABBR[selectedDay.getMonth()]}</Text>
-          <Text style={styles.ticketDayNumber}>{selectedDay.getDate()}</Text>
-          <Text style={styles.ticketWeekday}>{dayLabelFull(selectedDate)}</Text>
-        </View>
+          <Ionicons name="attach" size={18} color={colors.textOnPaper} style={styles.ticketPaperclip} />
 
-        <View style={styles.ticketVDivider} />
+          <View style={styles.ticketDateCol}>
+            <Text style={styles.ticketMonth}>{MONTH_ABBR[selectedDay.getMonth()]}</Text>
+            <Text style={styles.ticketDayNumber}>{selectedDay.getDate()}</Text>
+            <Text style={styles.ticketWeekday}>{dayLabelFull(selectedDate)}</Text>
+          </View>
 
-        <View style={styles.ticketFileCol}>
-          <Text style={styles.ticketTitle}>
-            CASE FILE #{selectedDay.getDate().toString().padStart(3, '0')}
-          </Text>
-          <Text style={styles.ticketSub}>DAILY LOG</Text>
-          {hasActivity && (
-            <View style={styles.recordedStamp}>
-              <Text style={styles.recordedText}>RECORDED</Text>
-            </View>
-          )}
+          <View style={styles.ticketFileCol}>
+            <Text style={styles.ticketTitle}>
+              CASE FILE #{selectedDay.getDate().toString().padStart(3, '0')}
+            </Text>
+            <Text style={styles.ticketSub}>DAILY LOG</Text>
+            {hasActivity && (
+              <View style={styles.recordedStamp}>
+                <Text style={styles.recordedText}>RECORDED</Text>
+              </View>
+            )}
+          </View>
         </View>
       </View>
 
@@ -128,24 +133,36 @@ const styles = StyleSheet.create({
   grid: {
     paddingHorizontal: spacing.md,
   },
-  ticket: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
+  // ticket_blank.png is the real "case file" ticket asset (torn paper +
+  // pocket + paperclip cutout, from the asset pack), inpainted clean of the
+  // sample text it originally shipped with. Container aspectRatio matches
+  // the asset's exact pixel ratio (407x144) so overlaid text always lands
+  // on the right pocket regardless of screen width — same rule as Home.
+  ticketOuter: {
     marginHorizontal: spacing.lg,
     marginTop: spacing.md,
-    backgroundColor: colors.paper,
-    borderRadius: 4,
-    padding: spacing.md,
-    minHeight: 88,
+  },
+  ticketImgWrap: {
+    width: '100%',
+    aspectRatio: 407 / 144,
+    position: 'relative',
+  },
+  ticketImg: {
+    width: '100%',
+    height: '100%',
   },
   ticketPaperclip: {
     position: 'absolute',
     top: -8,
-    left: 12,
+    left: '10%',
     transform: [{ rotate: '-14deg' }],
   },
   ticketDateCol: {
-    width: 60,
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: '37%',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -159,8 +176,8 @@ const styles = StyleSheet.create({
   ticketDayNumber: {
     ...typography.title,
     color: colors.textOnPaper,
-    fontSize: 32,
-    lineHeight: 36,
+    fontSize: 30,
+    lineHeight: 34,
   },
   ticketWeekday: {
     color: colors.textOnPaper,
@@ -168,14 +185,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     opacity: 0.7,
   },
-  ticketVDivider: {
-    width: 1,
-    backgroundColor: colors.paperDark,
-    marginHorizontal: spacing.md,
-  },
   ticketFileCol: {
-    flex: 1,
+    position: 'absolute',
+    left: '40%',
+    right: 0,
+    top: 0,
+    bottom: 0,
     justifyContent: 'center',
+    paddingLeft: spacing.sm,
   },
   ticketTitle: {
     color: colors.textOnPaper,
@@ -191,8 +208,8 @@ const styles = StyleSheet.create({
   },
   recordedStamp: {
     position: 'absolute',
-    right: 0,
-    bottom: -4,
+    right: spacing.sm,
+    bottom: spacing.md,
     borderWidth: 1.5,
     borderColor: colors.red,
     borderRadius: 4,

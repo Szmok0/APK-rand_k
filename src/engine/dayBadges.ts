@@ -1,12 +1,11 @@
 // Day-ticket badge row (Calendar detail view) — a coarser, 5-bucket *display*
-// grouping of a day's actual glyphs, shown as compact colored chips on the
-// Case File ticket. This is NOT a replacement for the real 28-icon/5-category
-// glyph set (AGENTS.md: "old icon set stays") — Add Activity and Evidence
-// Archive are untouched and still use the full set. This is purely a
-// derived "what kind of day was this, at a glance" summary, computed fresh
-// from glyphIds/importance every time, never stored.
-
-import { Ionicons } from '@expo/vector-icons';
+// grouping of a day's actual glyphs, shown as the real badge tiles from the
+// asset pack (assets/noir/calendar/badge_*.jpg). This is NOT a replacement
+// for the real 28-icon/5-category glyph set (AGENTS.md: "old icon set
+// stays") — Add Activity and Evidence Archive are untouched and still use
+// the full set. This is purely a derived "what kind of day was this, at a
+// glance" summary, computed fresh from glyphIds/importance every time,
+// never stored.
 
 import { GLYPH_MAP } from '@/data/glyphs';
 import { colors, moodColors } from '@/theme/tokens';
@@ -22,12 +21,12 @@ export const DAY_BADGE_COLORS: Record<DayBadgeKey, string> = {
   INCIDENT: colors.red,
 };
 
-export const DAY_BADGE_ICONS: Record<DayBadgeKey, keyof typeof Ionicons.glyphMap> = {
-  MEETING: 'people-outline',
-  CALL: 'call-outline',
-  DM: 'chatbubble-outline',
-  GIFT: 'gift-outline',
-  INCIDENT: 'alert-circle-outline',
+export const DAY_BADGE_IMAGES: Record<DayBadgeKey, any> = {
+  MEETING: require('../../assets/noir/calendar/badge_meeting.jpg'),
+  CALL: require('../../assets/noir/calendar/badge_call.jpg'),
+  DM: require('../../assets/noir/calendar/badge_dm.jpg'),
+  GIFT: require('../../assets/noir/calendar/badge_gift.jpg'),
+  INCIDENT: require('../../assets/noir/calendar/badge_incident.jpg'),
 };
 
 const CALL_IDS = new Set(['phone', 'video_call']);

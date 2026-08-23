@@ -1,10 +1,11 @@
-import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { GLYPH_MAP } from '@/data/glyphs';
 import { colors, moodColors } from '@/theme/tokens';
 import type { Activity } from '@/types/models';
+
+const DAY_MARKER = require('../../assets/noir/calendar/day_marker.jpg');
 
 type Props = {
   dayNumber: number;
@@ -29,7 +30,7 @@ export function CalendarDayCell({ dayNumber, inMonth, isToday, isSelected, activ
     <View style={[styles.wrap, isSelected && styles.wrapSelected]}>
       {isToday && (
         <View style={styles.todayBadge}>
-          <Ionicons name="star" size={9} color={colors.gold} />
+          <Image source={DAY_MARKER} style={styles.todayBadgeImage} />
         </View>
       )}
       <Text
@@ -80,7 +81,12 @@ const styles = StyleSheet.create({
   todayBadge: {
     position: 'absolute',
     top: 2,
-    right: 4,
+    right: 3,
+  },
+  todayBadgeImage: {
+    width: 14,
+    height: 14,
+    borderRadius: 2,
   },
   indicatorRow: {
     flexDirection: 'row',
