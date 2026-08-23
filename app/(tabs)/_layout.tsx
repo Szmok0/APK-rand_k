@@ -14,7 +14,7 @@ import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors } from '@/theme/tokens';
+import { colors, fonts } from '@/theme/tokens';
 
 // Exact pixel size of assets/noir/home/tabbar_bg.jpg.
 const BG_W = 853;
@@ -44,6 +44,12 @@ const TAB_META: Record<string, { icon: keyof typeof Ionicons.glyphMap; label: st
   profiler: { icon: 'finger-print-outline', label: 'PROFILER' },
 };
 
+// Measured directly off the source composite: the dashed icon square's
+// vertical center and the red underline glow's vertical center, both as a
+// fraction of the SLOT's own height (not the whole strip) — see TAB_SLOTS.
+const ICON_CENTER_PCT = 50.7;
+const LABEL_CENTER_PCT = 90;
+
 function CaseTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
   return (
@@ -72,8 +78,12 @@ function CaseTabBar({ state, descriptors, navigation }: any) {
               accessibilityRole="button"
               accessibilityState={isFocused ? { selected: true } : {}}
             >
-              <Ionicons name={meta.icon} size={20} color={isFocused ? colors.gold : colors.textFaint} />
-              <Text style={[styles.label, isFocused && styles.labelActive]}>{meta.label}</Text>
+              <View style={[styles.iconWrap, { top: `${ICON_CENTER_PCT}%` }]}>
+                <Ionicons name={meta.icon} size={22} color={isFocused ? colors.gold : colors.textFaint} />
+              </View>
+              <View style={[styles.labelWrap, { top: `${LABEL_CENTER_PCT}%` }]}>
+                <Text style={[styles.label, isFocused && styles.labelActive]}>{meta.label}</Text>
+              </View>
             </Pressable>
           );
         })}
@@ -112,12 +122,26 @@ const styles = StyleSheet.create({
   },
   slot: {
     position: 'absolute',
+  },
+  // Icon and label are independently centered on the dashed square / red
+  // underline they sit on top of (not stacked as a block) — see
+  // ICON_CENTER_PCT / LABEL_CENTER_PCT above for where those measured to.
+  iconWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingBottom: '18%',
+    transform: [{ translateY: -11 }],
+  },
+  labelWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    transform: [{ translateY: -7 }],
   },
   label: {
-    marginTop: 4,
+    fontFamily: fonts.display,
     fontSize: 8.5,
     letterSpacing: 0.6,
     color: colors.textFaint,

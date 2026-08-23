@@ -34,7 +34,7 @@ import { caseStatus } from '@/engine/caseStatus';
 import { dailyQuote } from '@/engine/quote';
 import { computeHomeStats } from '@/engine/summary';
 import { useRelationship } from '@/store/RelationshipStore';
-import { colors } from '@/theme/tokens';
+import { colors, fonts } from '@/theme/tokens';
 
 // Exact pixel size of assets/noir/home/home_bg.jpg — keep in sync if it's
 // ever re-cropped.
@@ -99,7 +99,8 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={{ height: insets.top + 20 }} />
         <View style={styles.bgContainer}>
           <Image
             source={require('../../assets/noir/home/home_bg.jpg')}
@@ -108,13 +109,14 @@ export default function HomeScreen() {
           />
 
           <Pressable style={[styles.zone, ZONES.photo]} onPress={pickProfilePhoto}>
-            {caseMeta.profilePhotoUri ? (
-              <Image source={{ uri: caseMeta.profilePhotoUri }} style={styles.photo} />
-            ) : (
-              <View style={styles.photoEmpty}>
-                <Ionicons name="camera-outline" size={22} color={colors.textFaint} />
-              </View>
-            )}
+            <Image
+              source={
+                caseMeta.profilePhotoUri
+                  ? { uri: caseMeta.profilePhotoUri }
+                  : require('../../assets/noir/home/subject_default.jpg')
+              }
+              style={styles.photo}
+            />
           </Pressable>
 
           <View style={[styles.zone, ZONES.statusNote]}>
@@ -153,6 +155,11 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingBottom: 16,
+  },
   bgContainer: {
     width: '100%',
     aspectRatio: ASPECT,
@@ -172,26 +179,25 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 4,
   },
-  photoEmpty: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  // Every dynamic-value overlay uses the same monospace "typewriter/case-file
+  // stamp" font as the image's own baked-in lettering (typography.stamp) —
+  // the platform default sans clashed badly against the grunge display type.
   statusNoteText: {
     color: colors.textSecondary,
+    fontFamily: fonts.display,
     fontSize: 11,
     lineHeight: 15,
     paddingHorizontal: 8,
   },
   dataText: {
     color: colors.textPrimary,
+    fontFamily: fonts.display,
     fontWeight: '700',
     fontSize: 14,
   },
   quoteText: {
     color: colors.textOnPaper,
+    fontFamily: fonts.display,
     fontStyle: 'italic',
     fontSize: 12,
     lineHeight: 17,
