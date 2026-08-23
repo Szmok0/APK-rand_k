@@ -2,22 +2,61 @@
 
 Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing any code.
 
-# Product spec
+# Product spec (v2 — noir rebuild, supersedes everything below)
 
-`docs/MVP_relacyjny_kalendarz_v6.md` is the authoritative, binding product spec for
-this app (Zu'z Diary). It supersedes all earlier verbal/MD instructions about screens,
-layout, and visual rules. Read it before making any UI/UX change. Key points that are
-easy to miss and easy to violate accidentally:
+The app was fully rebuilt from "Zu'z Diary" (a Polish-language relationship calendar
+with glyphs/DNA-galaxy) into **Zuza's Diary — Case Log**: a private, offline
+relationship diary framed as a strange noir investigation. Same engine
+(Activity model, calendar logic, local storage), completely different visual
+language, terminology and language (English).
 
-- Global rule: no square/circular background container behind any glyph/rune icon —
-  ever, anywhere. Only its own baked-in glow. The one exception is a gold outline/glow
-  on a *selected* glyph in the Add Activity picker.
-- DNA/galaxy on START is now a **static image** (`assets/dna_background.png`), not
-  vector-rendered — Emotional Tone Layer (dynamic recoloring) is deferred, not required.
-- Add Activity is a bottom sheet where every field (date, time, glyph) is collapsed to
-  a one-line chip by default and only expands temporarily on tap.
-- Calendar's day cell is minimal (day number + one small mood-color dot/bar + note dot,
-  no glyph icon, no time text); tapping a day slides up an integrated preview panel
-  below the grid instead of navigating to a separate screen.
-- Two distinct gold tokens: `colors.gold` (muted UI accent) vs `moodColors.BLISKOSC`
-  (vivid neon mood color) — never the same value.
+Authoritative specs, in order of how concrete/binding they are:
+
+1. `docs/ZUZA_CASE_LOG_CLAUDE_CODE_MASTER.md` — the creative/priority brief.
+   Explicitly says NOT to build every proposed module — Comparative Analysis,
+   Incident Classification, Case Narrative and Evidence Wall are parked until
+   proven necessary; the full Profiler (question bank + scoring) needs design
+   work first, it's not just a missing file.
+2. `docs/HOME_APPROVED_TECH_SPEC.md`, `docs/CALENDAR_TECH_SPEC.md`,
+   `docs/ADD_ACTIVITY_TECH_SPEC.md` — approved, concrete screen specs for the
+   4 screens actually built (Home, Calendar, Add Activity, Evidence Archive).
+3. `docs/ZUZA_DIARY_CLAUDE_CODE_TECHNICAL_MASTER_v2.md` — earlier, broader
+   technical contract. Still useful background, but superseded wherever it
+   conflicts with the two docs above (e.g. it originally described Evidence
+   as a separate persisted entity — the product decision that stuck is
+   Evidence Archive as a derived VIEW over Activity, no second table).
+4. `docs/content/*.md` — the local content pools actually wired into the app
+   (quotes, case status lines, easter eggs, empty states, action messages).
+   All English, deterministic selection, no network.
+5. `docs/MVP_relacyjny_kalendarz_v6.md` / `docs/AUDYT_WIZUALNY_v3.md` — the
+   PREVIOUS product concept (Polish relationship calendar). Kept for history
+   only; do not follow these for new work.
+
+## Rules that are easy to violate by accident
+
+- **Single, permanent case.** There is exactly one case (`CASE No. 001`,
+  alias `THE LID`, real name `ZUZA` only where the Profiler addresses her
+  directly). No multi-case UI. "Close & Clear Case" in Settings archives and
+  resets activities — it does not create a new case.
+- **Evidence Archive is a derived view**, never a second table. Every
+  `Activity` automatically becomes an exhibit (`src/engine/evidence.ts`).
+  Do not add a standalone "add evidence" flow.
+- **Whole app is in English.** Don't reintroduce Polish UI copy.
+- **Old glyph/icon set stays** (all ~28 icons), grouped under the 5 existing
+  categories (now English labels) as "incident types" — not replaced by a
+  simplified icon set, even though some mockups explored that.
+- **No fake Profiler.** The question bank, scoring/tags and report templates
+  are real product/psychology design work (MD section 9/11) — don't invent a
+  "fake psychological system" to fill the gap. `app/(tabs)/profiler.tsx` is a
+  placeholder until that work is done.
+- **4 bottom-nav tabs, no FAB**: HOME / CALENDAR / EVIDENCE / PROFILER.
+  Comparative Analysis is intentionally not a tab yet (needs ≥2 real Profiler
+  assessments to compare against).
+- **Safe areas are mandatory** (`src/components/ui.tsx` `Header` uses real
+  `useSafeAreaInsets()` — this was a real, reported bug: a fixed padding let
+  content render under the system status bar).
+- **Missing assets get reported, not invented.** The delivered asset packs
+  only include real, ready-to-use transparent PNGs for Evidence Archive
+  (`assets/noir/evidence/*`). Home/Calendar/Add Activity backgrounds
+  (`assets/noir/backgrounds/*`) were cropped from mockup composites at modest
+  resolution — usable, but a proper full-resolution export would look sharper.

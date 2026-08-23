@@ -1,4 +1,6 @@
-// Model danych — sekcja 12 MD ("MVP — Relacyjny Kalendarz Piktograficzny v2").
+// Data model — Zuza's Diary: Case Log (noir rebuild). Engine mostly carried over
+// from the previous "relationship calendar" build; renamed/extended for the
+// single, fixed Case concept (see docs/ZUZA_CASE_LOG_CLAUDE_CODE_MASTER.md).
 
 import type { MoodTag } from '@/theme/tokens';
 
@@ -14,18 +16,28 @@ export type Glyph = {
   requiresDuration: boolean;
 };
 
-// Jeden dzień = jedna Activity. Wiele glifów na jedną aktywność (sekcja 12).
+// One day = one Activity. Multiple glyphs ("incident types") per activity.
 export type Activity = {
   id: string;
-  date: string; // 'YYYY-MM-DD', unikalna w skali relacji
-  startTime?: string; // 'HH:00', opcjonalne
-  endTime?: string; // 'HH:00', opcjonalne
+  date: string; // 'YYYY-MM-DD', unique across the case
+  startTime?: string; // 'HH:00', optional
+  endTime?: string; // 'HH:00', optional
   glyphIds: string[];
   note?: string;
-  importance: 0 | 1 | 2;
+  importance: 0 | 1 | 2; // CASE PRIORITY: 0 routine, 1 noted, 2 critical
   photoUri?: string;
   createdAt: string;
   updatedAt: string;
+};
+
+// There is exactly one, permanent case (product decision: "single stable case,
+// case-file-style name/number, user may clear it if the relationship changes").
+export type CaseMeta = {
+  caseNumber: string; // 'No. 001'
+  alias: string; // "THE LID" — shown on Home/nav, never the real name
+  subjectName: string; // "ZUZA" — used where the Profiler addresses her directly
+  firstContactDate: string; // 'YYYY-MM-DD'
+  profilePhotoUri?: string;
 };
 
 export type Relationship = {
@@ -33,14 +45,29 @@ export type Relationship = {
   startedAt: string;
 };
 
-// Archiwum — plik zamkniętej historii (sekcja 10, ten sam format co eksport, sekcja 15).
+// Evidence Archive is a DERIVED VIEW over Activity — no separate table, no
+// second database (product decision, matches CASE_LOG_MASTER section 9 and
+// ADD_ACTIVITY_TECH_SPEC). See src/engine/evidence.ts.
+export type ExhibitFilter = 'ALL' | 'MEETINGS' | 'MESSAGES' | 'ITEMS' | 'EMOTIONS' | 'INCIDENTS';
+
+export type Exhibit = {
+  id: string; // same id as the source Activity
+  number: number; // chronological exhibit number (#001 = oldest)
+  date: string;
+  glyphIds: string[];
+  note?: string;
+  photoUri?: string;
+  importance: 0 | 1 | 2;
+};
+
+// Archive — closed-case file (same schema as export, section below).
 export type ArchiveEntry = {
   id: string;
   closedAt: string;
   relationship: Relationship;
 };
 
-// Format pliku eksportu / archiwum (sekcja 15) — jeden spójny schemat.
+// Export/import file format — one consistent schema.
 export type ExportFile = {
   schema: 'zuz-diary/relationship';
   version: 1;

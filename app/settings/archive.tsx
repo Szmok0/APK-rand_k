@@ -1,5 +1,4 @@
-// ARCHIWUM — sekcja 10/11 MD. Lista zamkniętych historii, tylko eksport pliku,
-// bez wglądu w szczegóły w UI.
+// ARCHIVE — list of closed case files, export-only, no in-UI detail view.
 
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
@@ -12,7 +11,7 @@ import { shareExportFile } from '@/utils/fileIO';
 
 function formatClosedAt(iso: string) {
   const d = new Date(iso);
-  return `Historia — zamknięta ${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+  return `Closed ${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
 }
 
 export default function ArchiveScreen() {
@@ -24,19 +23,20 @@ export default function ArchiveScreen() {
     try {
       await shareExportFile(
         { schema: 'zuz-diary/relationship', version: 1, exportedAt: new Date().toISOString(), relationship: entry.relationship },
-        `zuz-diary-archiwum-${entry.id}`
+        `zuza-case-archive-${entry.id}`
       );
     } catch (e) {
-      Alert.alert('Błąd eksportu', String(e));
+      Alert.alert('Export failed', String(e));
     }
   }
 
   return (
     <Screen>
-      <Header title="ARCHIWUM" />
+      <Header title="ARCHIVE" />
       {archives.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>Brak zarchiwizowanych historii.</Text>
+          <Text style={styles.emptyText}>No archived cases.</Text>
+          <Text style={styles.emptySubtext}>The current one has not earned retirement yet.</Text>
         </View>
       ) : (
         <FlatList
@@ -47,7 +47,7 @@ export default function ArchiveScreen() {
             <View style={styles.card}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.title}>{formatClosedAt(item.closedAt)}</Text>
-                <Text style={styles.meta}>{item.relationship.activities.length} zapisanych dni</Text>
+                <Text style={styles.meta}>{item.relationship.activities.length} recorded days</Text>
               </View>
               <Pressable onPress={() => handleExport(item.id)} hitSlop={10}>
                 <Ionicons name="share-outline" size={20} color={colors.gold} />
@@ -65,9 +65,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 4,
   },
   emptyText: {
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  emptySubtext: {
     color: colors.textFaint,
+    fontSize: 12,
   },
   list: {
     paddingHorizontal: spacing.lg,

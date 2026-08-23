@@ -1,119 +1,114 @@
-# Zu'z Diary
+# Zuza's Diary — Case Log
 
-Implementacja aplikacji „Relacyjny Kalendarz Piktograficzny”. Spec: `docs/MVP_relacyjny_kalendarz_v6.md`
-(obowiązująca — patrz też `AGENTS.md`). Expo (React Native) + TypeScript + expo-router.
+A private, offline relationship diary framed as a strange noir investigation.
+Same engine as the previous "Zu'z Diary" build (Activity model, calendar
+logic, local storage) — completely new visual language, terminology and
+language (English). Spec: `docs/ZUZA_CASE_LOG_CLAUDE_CODE_MASTER.md` +
+`docs/HOME_APPROVED_TECH_SPEC.md` / `docs/CALENDAR_TECH_SPEC.md` /
+`docs/ADD_ACTIVITY_TECH_SPEC.md` (see `AGENTS.md` for the full doc hierarchy).
+Expo (React Native) + TypeScript + expo-router.
 
-## Uruchomienie — podgląd przez Expo Go (najszybsze)
+## Run — Expo Go preview (fastest)
 
 ```bash
 npm install
-npx expo start          # zeskanuj kod QR aparatem / appką Expo Go na telefonie
-npx expo start --tunnel # jeśli telefon i komputer nie są w tej samej sieci Wi-Fi
+npx expo start          # scan the QR code with the Expo Go app on your phone
+npx expo start --tunnel # if phone and computer aren't on the same Wi-Fi
 ```
 
-Ograniczenie: Expo Go pokazuje appkę pod swoją ikoną i nie honoruje w pełni
-natywnego boot-splasha (`expo-splash-screen`) — do tego potrzebny jest build
-poniżej.
+Limitation: Expo Go shows the app under its own icon and doesn't fully honor
+the native boot splash (`expo-splash-screen`) — for that, use the real build
+below.
 
-## Prawdziwy, instalowalny build (EAS Build)
+## Real, installable build (EAS Build)
 
-Wymaga darmowego konta na [expo.dev](https://expo.dev) i `eas-cli`:
+Requires a free [expo.dev](https://expo.dev) account and `eas-cli`:
 
 ```bash
 npm install -g eas-cli
 eas login
-eas build -p android --profile preview   # buduje .apk, link do pobrania na koniec
+eas build -p android --profile preview   # builds a .apk, download link at the end
 ```
 
-`eas.json` (profil `preview`, buduje `.apk` do instalacji bezpośrednio na
-telefonie, bez sklepu) i `android.package`/`ios.bundleIdentifier` w
-`app.json` (`com.zuzdiary.app`) są już przygotowane — pierwsze uruchomienie
-`eas build` może jeszcze zapytać o utworzenie/połączenie projektu na Twoim
-koncie Expo (`eas init`), potem już nie.
+`eas.json` (`preview` profile, builds an installable `.apk` directly, no
+store) and `android.package`/`ios.bundleIdentifier` in `app.json`
+(`com.zuzdiary.app`) are already set up.
 
-## Struktura
+## Structure
 
 ```
-app/                  ekrany (expo-router, file-based)
-  index.tsx           SPLASH
-  start.tsx           START — "Zu'z Diary" (DNA jako statyczny obraz, v5)
-  calendar.tsx         KALENDARZ (minimalna komórka + zintegrowany panel dnia, v6)
-  timeline.tsx          TIMELINE
-  day/[date].tsx        route używany przez Timeline ("tap → detail"); w Kalendarzu
-                        ten sam widok jest osadzony inline, nie jako nawigacja (v6)
-  add-activity.tsx      ADD ACTIVITY — panel, wszystko zwijane do chipów (v6)
-  settings/             USTAWIENIA, Archiwum, O aplikacji
+app/
+  index.tsx              COVER — poster tagline, tap to enter (dinosaur splash art)
+  (tabs)/                 bottom nav: HOME / CALENDAR / EVIDENCE / PROFILER, no FAB
+    _layout.tsx
+    home.tsx              Case Overview — case number, alias, status, stats, quote
+    calendar.tsx           Case Log — month grid + inline day panel below it
+    evidence.tsx            Evidence Archive — derived view over Activity, filters
+    profiler.tsx             placeholder (question bank not designed yet)
+  day/[date].tsx          deep-link target for a single case day (DayDetailPanel)
+  add-activity.tsx        FILE NEW INCIDENT — collapsible-chip form
+  settings/               Settings, Archive, About
 src/
-  types/models.ts       Activity / Glyph / Relationship
-  data/glyphs.ts         27 glifów + 5 run emocji, zamknięty zestaw (sekcja 13)
-  data/quotes.ts          baza cytatów (sekcja 14)
-  engine/                 Summary Engine + specyfikacja Emotional Tone Layer
-                          (kod gotowy, ale nieużywany na START — DNA jest
-                          statycznym obrazem, sekcja 6/4 MD v6: ETL odłożone)
-  store/RelationshipStore.tsx   jeden store (AsyncStorage/JSON), CRUD + archiwum
+  types/models.ts         Activity / Glyph / CaseMeta / Exhibit
+  data/
+    glyphs.ts              ~28 incident-type icons (unchanged set), English labels
+    quotes.ts               181 quotes (docs/content/zuza_diary_daily_quotes.md)
+    caseStatusLines.ts       103 HOME status lines
+    easterEggs.ts / concreteReferenceEggs.ts / rareEvents.ts / emptyStates.ts /
+    actionMessages.ts        remaining local content pools (not all wired up yet)
+  engine/
+    summary.ts               stats (incl. computeHomeStats — the 5 HOME concepts)
+    evidence.ts               Evidence Archive derivation (no second table)
+    caseStatus.ts             deterministic daily HOME status line
+    quote.ts                  deterministic daily quote
+  store/RelationshipStore.tsx single store (AsyncStorage/JSON): activities,
+                              archives, caseMeta (case number/alias/first contact)
   components/
-    DayDetailPanel.tsx    treść "day detail", współdzielona przez Kalendarz i route
-    CollapsibleField.tsx  pole zwijane do chipa (Add Activity)
-    GlyphPickerOverlay.tsx  pełnoekranowy wybór glifów (Add Activity)
-    GlyphIcon.tsx / GlyphCluster.tsx  renderują glif BEZ żadnego tła/kontenera
-                                      w kodzie — cała poświata jest w pliku PNG
+    ui.tsx                    Screen/Header (real safe-area insets)/buttons
+    DayDetailPanel.tsx         shared "Case Day" content (Calendar + day/[date])
+    GlyphPickerOverlay.tsx      full-screen incident-type picker
 assets/
-  glyphs/*_transparent.png   27 glifów, tło naprawione algorytmicznie (luma-key)
-  runes/*_transparent.png    5 run emocji, jw.
-  dna_background.png         statyczny obraz galaktyki DNA (ekran START, v5)
-  splash-dino.jpg             grafika splash
+  glyphs/*_transparent.png     ~28 icons, alpha fixed via luma-key (kept as-is)
+  noir/backgrounds/            desk_bg.jpg / calendar_bg.jpg — cropped from the
+                                mockup composites; usable but modest resolution
+  noir/evidence/                real transparent PNGs (evidence_card_frame,
+                                evidence_photo_frame, exhibit_stamp)
 ```
 
-## Kluczowe decyzje z MD v6 (skrót — pełny kontekst w dokumencie)
+## Product decisions worth knowing before touching this
 
-- **DNA/galaktyka jest statycznym obrazem** (`assets/dna_background.png`), nie
-  wektorem renderowanym w kodzie — po kilku nieudanych próbach SVG/Skia klient
-  zaakceptował gotową grafikę AI. Emotional Tone Layer (dynamiczne podświetlenie
-  danymi) jest świadomie odłożone; silnik (`engine/emotionalTone.ts`) zostaje
-  w kodzie jako gotowa specyfikacja na przyszłość, ale START go nie używa.
-- **Zasada globalna**: żaden glif/runa nie ma tła/kontenera w kodzie (kwadratu
-  ani koła) — tylko własna, wypalona w pliku poświata. Jedyny wyjątek: obrys
-  (nie wypełnienie) wokół zaznaczonego glifu w Add Activity.
-- **Assety naprawione** — oryginalne pliki od klienta miały kanał alfa w 100%
-  nieprzezroczysty (czarne kwadraty zamiast przezroczystości). Naprawione
-  algorytmicznie (luma-key: `alpha = max(r,g,b)`) — obowiązują pliki
-  `*_transparent.png`. Rysunek i kolorystyka oryginałów były od początku
-  poprawne, zgodne z sekcją 13.
-- **Dwa różne złote**: `colors.gold` (`#D1A262`, stonowany akcent UI) vs
-  `moodColors.BLISKOSC` (`#F7BA1E`, nasycony neonowy mood-kolor) — nigdy ten
-  sam token.
-- **Kalendarz**: komórka dnia jest minimalna (numer + kolorowy pasek nastroju +
-  kropka notatki, bez ikony glifu). Tap na dzień wysuwa panel podglądu pod
-  siatką (ten sam `DayDetailPanel`, którego używa też route `day/[date]` przy
-  wejściu z Timeline) — nie nawiguje na osobny ekran.
-- **Add Activity**: bottom sheet, gdzie data/czas/glif to domyślnie zwinięte
-  chipy (tap → tymczasowe rozwinięcie → auto-zwinięcie po wyborze). Wybór glifu
-  otwiera osobny, pełnoekranowy widok (`GlyphPickerOverlay`). Zapis = floating
-  okrągły przycisk (FAB), nie pełnoszerokościowy pill.
-- **Timeline**: linia ma gradient koloru wzdłuż długości (zależny od nastroju
-  najbliższych wydarzeń), poświatę wokół węzłów i leader-line jednoznacznie
-  łączący etykietę z punktem.
+- **Single, permanent case** (`CASE No. 001`, alias `THE LID`) — no
+  multi-case UI. "Close & Clear Case" archives + resets activities.
+- **Evidence Archive is a derived view**, not a second table — every
+  `Activity` is automatically an exhibit.
+- **Old glyph/icon set kept**, grouped under the same 5 categories
+  (relabelled in English) — not replaced by a simplified icon set.
+- **Profiler is a placeholder.** The question bank + scoring model is real
+  design work, not a missing file — see `AGENTS.md`.
+- **4 nav tabs, no FAB.** Comparative Analysis intentionally isn't a tab yet.
 
-## Placeholdery / do weryfikacji z klientem
+## Missing / lower-fidelity assets (reported, not invented — see AGENTS.md)
 
-- **Baza cytatów** (`src/data/quotes.ts`) — ok. 140 własnych sentencji PL jako
-  placeholder startowy (MD sugeruje 150–365).
-- **Wariant glifu `drink`** — domyślnie `drink_OPTION_wine_transparent.png`;
-  zmiana na `cocktail` to jedna linijka w `src/data/glyphs.ts`.
-- Grubość kresek glifów nie była testowana w realnym rozmiarze komórki na
-  fizycznym ekranie (sekcja 25 MD).
+- `assets/noir/backgrounds/*.jpg` were cropped from mockup composite images
+  (no separate full-resolution export was delivered for Home/Calendar/Add
+  Activity backgrounds) — visually consistent, but a proper `.webp` export at
+  the sizes named in the mockup legends (e.g. 1170×2532) would look sharper.
+- No dedicated profile-frame/placeholder or paper-stamp (CONFIDENTIAL/
+  RECORDED) transparent assets were delivered for Home/Calendar — these are
+  currently code-drawn (bordered text badges) instead.
+- Profiler/Comparative Analysis have a real, complete asset kit already
+  (`report_frame`, `question_card_frame`, `report_section_icon_*`,
+  `comparison_header_frame`, etc., in the original delivered zip) — not yet
+  copied into `assets/` since those screens aren't built.
 
-## Zweryfikowane
+## Verified
 
-`tsc --noEmit` czysty, `expo export --platform android` bundluje bez błędów.
-Zweryfikowane wizualnie przez `expo start --web` + zrzuty ekranu wszystkich
-głównych widoków z realnymi danymi (splash, START, kalendarz z panelem dnia,
-timeline, add activity — zwinięty/rozwinięty/overlay glifów). Przy tym
-przeglądzie znaleziony i naprawiony błąd: formularz Add Activity nie
-wczytywał istniejącej aktywności dnia, jeśli otwarto go zanim store
-skończył asynchroniczne wczytywanie danych (web/AsyncStorage) — `useEffect`
-synchronizujący formularz teraz zależy też od flagi `loading`.
+`tsc --noEmit` clean. Verified visually via `expo start --web` + Playwright
+screenshots across Cover → Home → Calendar → Add Activity (incident-type
+picker, filled form, save) → Evidence Archive → Settings/About, including the
+full data flow (an activity added in Add Activity correctly shows up in
+Calendar, Evidence Archive as an exhibit, and Home's stats).
 
-Nie zweryfikowano jeszcze natywnie na iOS/Android (środowisko budowy nie miało
-dostępu do symulatora/emulatora) — zalecany kolejny krok to `npm run android`/
-`npm run ios` na prawdziwym urządzeniu.
+Not yet verified natively on iOS/Android (no simulator/emulator in this build
+environment) — next step is `eas build` or `npm run android`/`npm run ios` on
+a real device.

@@ -1,15 +1,9 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, spacing } from '@/theme/tokens';
+import { colors, priorityLabels, spacing } from '@/theme/tokens';
 
-const LABELS: Record<0 | 1 | 2, string> = {
-  0: 'zwykłe',
-  1: 'ważne',
-  2: 'bardzo ważne',
-};
-
-// Ważność — 3 poziomy, ustawiane ręcznie, bez automatyki (sekcja 8/12).
+// CASE PRIORITY — 3 levels, set manually, no automation (ADD_ACTIVITY_TECH_SPEC).
 export function ImportanceSelector({
   value,
   onChange,
@@ -37,7 +31,7 @@ export function ImportanceSelector({
           </Pressable>
         ))}
       </View>
-      <Text style={styles.label}>{LABELS[value]}</Text>
+      <Text style={styles.label}>{priorityLabels[value]}</Text>
     </View>
   );
 }

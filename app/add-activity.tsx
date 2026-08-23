@@ -20,16 +20,10 @@ import { TimeRangePicker } from '@/components/TimeRangePicker';
 import { Header, Screen } from '@/components/ui';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, radius, spacing } from '@/theme/tokens';
-import { fromDateKey, todayKey } from '@/utils/dates';
-
-const MONTHS_GENITIVE = [
-  'stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca',
-  'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia',
-];
+import { dateLabelUpper, todayKey } from '@/utils/dates';
 
 function formatDateChip(dateKey: string) {
-  const d = fromDateKey(dateKey);
-  return `${d.getDate()} ${MONTHS_GENITIVE[d.getMonth()]}`;
+  return dateLabelUpper(dateKey);
 }
 
 export default function AddActivityScreen() {
@@ -118,11 +112,11 @@ export default function AddActivityScreen() {
 
   return (
     <Screen>
-      <Header title="DODAJ AKTYWNOŚĆ" onBack={() => router.back()} />
+      <Header title="FILE NEW INCIDENT" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Data — zwinięta domyślnie do chipa (sekcja 8 v6) */}
+        {/* Date — collapsed to a chip by default */}
         <CollapsibleField
-          label={`📅  ${formatDateChip(selectedDate)}`}
+          label={`INCIDENT DATE — ${formatDateChip(selectedDate)}`}
           expanded={dateExpanded}
           onToggle={() => setDateExpanded((v) => !v)}
         >
@@ -137,15 +131,14 @@ export default function AddActivityScreen() {
         </CollapsibleField>
         {existing && (
           <Text style={styles.hint}>
-            Ten dzień ma już zapisaną aktywność — dogrywasz kolejne glify do tego samego wpisu.
+            This day already has a case file — you're adding more incident types to the same entry.
           </Text>
         )}
 
-        {/* Czas — pojawia się TYLKO jeśli wybrany glif tego wymaga (kolejność: glif
-            przed czasem, sekcja 8 v6) */}
+        {/* Time window — only shown when the selected incident type requires one */}
         {needsDuration && (
           <CollapsibleField
-            label={`🕐  OD ${startTime} — DO ${endTime}`}
+            label={`TIME WINDOW — ${startTime} to ${endTime}`}
             expanded={timeExpanded}
             onToggle={() => setTimeExpanded((v) => !v)}
           >
@@ -158,13 +151,13 @@ export default function AddActivityScreen() {
               }}
             />
             <Pressable style={styles.doneRow} onPress={() => setTimeExpanded(false)}>
-              <Text style={styles.doneRowLabel}>Gotowe</Text>
+              <Text style={styles.doneRowLabel}>Done</Text>
             </Pressable>
           </CollapsibleField>
         )}
 
-        {/* Glif — chip pokazuje podgląd już wybranych; tap otwiera osobny, nakładany
-            widok wyboru (GlyphPickerOverlay), nie stałą siatkę w panelu (sekcja 8 v6) */}
+        {/* Incident type — chip shows a preview of what's already selected; tap opens
+            the full-screen picker (GlyphPickerOverlay), not a fixed grid in the form */}
         <Pressable style={styles.glyphChip} onPress={() => setGlyphPickerOpen(true)}>
           <View style={styles.glyphChipPreview}>
             {glyphIds.slice(0, 5).map((id, idx) => (
@@ -173,31 +166,31 @@ export default function AddActivityScreen() {
               </View>
             ))}
             <Text style={styles.glyphChipLabel}>
-              {glyphIds.length === 0 ? 'Dodaj glif' : `+ Dodaj (${glyphIds.length})`}
+              {glyphIds.length === 0 ? 'INCIDENT TYPE' : `+ Add (${glyphIds.length})`}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.textFaint} />
         </Pressable>
 
-        {/* Notatka — jedyne pole, które nie jest zwijane (samo jest już minimalne) */}
+        {/* Report — the one field that's never collapsed */}
         <TextInput
           style={styles.noteInput}
-          placeholder="Notatka (opcjonalna)"
+          placeholder="REPORT — what happened?"
           placeholderTextColor={colors.textFaint}
           value={note}
           onChangeText={setNote}
         />
 
-        {/* Ważność i zdjęcie — zwijany segment "więcej opcji" (sekcja 8 v6) */}
+        {/* Case priority + evidence — collapsed "more options" segment */}
         <CollapsibleField
-          label="Więcej opcji (ważność, zdjęcie)"
+          label="MORE OPTIONS (case priority, evidence)"
           expanded={moreExpanded}
           onToggle={() => setMoreExpanded((v) => !v)}
         >
-          <Text style={styles.moreLabel}>Ważność</Text>
+          <Text style={styles.moreLabel}>Case Priority</Text>
           <ImportanceSelector value={importance} onChange={setImportance} />
 
-          <Text style={[styles.moreLabel, { marginTop: spacing.md }]}>Zdjęcie</Text>
+          <Text style={[styles.moreLabel, { marginTop: spacing.md }]}>Evidence (Photo)</Text>
           {photoUri ? (
             <Pressable onPress={pickPhoto} style={styles.photoPreviewWrap}>
               <Image source={{ uri: photoUri }} style={styles.photoPreview} />
@@ -205,7 +198,7 @@ export default function AddActivityScreen() {
           ) : (
             <Pressable onPress={pickPhoto} style={styles.photoPicker}>
               <Ionicons name="image-outline" size={20} color={colors.textFaint} />
-              <Text style={styles.photoPickerLabel}>Wybierz z galerii</Text>
+              <Text style={styles.photoPickerLabel}>Attach Evidence</Text>
             </Pressable>
           )}
         </CollapsibleField>

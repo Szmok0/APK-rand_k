@@ -63,9 +63,9 @@ type Props = {
 export function TimeRangePicker({ startTime, endTime, onChange }: Props) {
   return (
     <View style={styles.row}>
-      <HourWheel label="OD" value={startTime} onChange={(h) => onChange({ startTime: h, endTime })} />
+      <HourWheel label="FROM" value={startTime} onChange={(h) => onChange({ startTime: h, endTime })} />
       <Text style={styles.dash}>—</Text>
-      <HourWheel label="DO" value={endTime} onChange={(h) => onChange({ startTime, endTime: h })} />
+      <HourWheel label="TO" value={endTime} onChange={(h) => onChange({ startTime, endTime: h })} />
     </View>
   );
 }

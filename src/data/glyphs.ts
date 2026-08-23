@@ -1,6 +1,8 @@
-// Zamknięta, finalna lista 27 glifów — sekcja 13 MD.
-// Reguła czasu jest per-kategoria (nie per-glif): MEETINGS zawsze TAK,
-// z CONTACT tylko phone/video_call, cała reszta NIE.
+// Closed, final list of glyphs (icon set carried over from the previous build —
+// "old icons stay" per product decision). These are now INCIDENT TYPES in the
+// noir/case-file redesign, grouped under the same five categories as before,
+// just relabelled in English. Duration rule is per-category (not per-glyph):
+// MEETINGS always requires a time window; from CONTACT only phone/video_call do.
 
 import type { Glyph, GlyphCategory, MoodTag } from '@/types/models';
 
@@ -15,37 +17,37 @@ const MEETINGS_ALWAYS_DURATION = new Set(['CONTACT_phone', 'CONTACT_video_call']
 
 const SEEDS: GlyphSeed[] = [
   // CONTACT
-  { id: 'first_message', name: 'Pierwsza wiadomość', category: 'CONTACT', moodTag: 'TESKNOTA' },
-  { id: 'message', name: 'Wiadomość', category: 'CONTACT', moodTag: 'TESKNOTA' },
-  { id: 'phone', name: 'Telefon', category: 'CONTACT', moodTag: 'TESKNOTA' },
-  { id: 'video_call', name: 'Rozmowa wideo', category: 'CONTACT', moodTag: 'TESKNOTA' },
+  { id: 'first_message', name: 'First Message', category: 'CONTACT', moodTag: 'TESKNOTA' },
+  { id: 'message', name: 'Message', category: 'CONTACT', moodTag: 'TESKNOTA' },
+  { id: 'phone', name: 'Phone Call', category: 'CONTACT', moodTag: 'TESKNOTA' },
+  { id: 'video_call', name: 'Video Call', category: 'CONTACT', moodTag: 'TESKNOTA' },
   { id: 'ghosting', name: 'Ghosting', category: 'CONTACT', moodTag: 'NAPIECIE' },
-  { id: 'reconnect', name: 'Powrót kontaktu', category: 'CONTACT', moodTag: 'TESKNOTA' },
-  // DATING (neutralne, nie liczą się do nastroju)
+  { id: 'reconnect', name: 'Return of Contact', category: 'CONTACT', moodTag: 'TESKNOTA' },
+  // DATING (neutral, does not count toward mood)
   { id: 'swipe', name: 'Swipe', category: 'DATING', moodTag: null },
   { id: 'match', name: 'Match', category: 'DATING', moodTag: null },
-  { id: 'tinder_installed', name: 'Instalacja aplikacji', category: 'DATING', moodTag: null },
-  { id: 'invitation', name: 'Zaproszenie', category: 'DATING', moodTag: null },
+  { id: 'tinder_installed', name: 'App Installed', category: 'DATING', moodTag: null },
+  { id: 'invitation', name: 'Invitation', category: 'DATING', moodTag: null },
   // MEETINGS
-  { id: 'coffee', name: 'Kawa', category: 'MEETINGS', moodTag: 'BLISKOSC' },
-  { id: 'dinner', name: 'Kolacja', category: 'MEETINGS', moodTag: 'BLISKOSC' },
+  { id: 'coffee', name: 'Coffee', category: 'MEETINGS', moodTag: 'BLISKOSC' },
+  { id: 'dinner', name: 'Dinner', category: 'MEETINGS', moodTag: 'BLISKOSC' },
   { id: 'drink', name: 'Drink', category: 'MEETINGS', moodTag: 'BLISKOSC' },
-  { id: 'walk', name: 'Spacer', category: 'MEETINGS', moodTag: 'BLISKOSC' },
-  { id: 'picnic', name: 'Piknik', category: 'MEETINGS', moodTag: 'BLISKOSC' },
-  { id: 'cinema', name: 'Kino', category: 'MEETINGS', moodTag: 'BLISKOSC' },
-  { id: 'concert', name: 'Koncert', category: 'MEETINGS', moodTag: 'BLISKOSC' },
-  { id: 'trip', name: 'Wyjazd', category: 'MEETINGS', moodTag: 'BLISKOSC' },
-  { id: 'night', name: 'Noc razem', category: 'MEETINGS', moodTag: 'NAMIETNOSC' },
-  // EMOTION
-  { id: 'important_talk', name: 'Ważna rozmowa', category: 'EMOTION', moodTag: 'NAPIECIE' },
-  { id: 'argument', name: 'Kłótnia', category: 'EMOTION', moodTag: 'NAPIECIE' },
-  { id: 'reconciliation', name: 'Pojednanie', category: 'EMOTION', moodTag: 'RADOSC' },
-  { id: 'intimate_moment', name: 'Bliski moment', category: 'EMOTION', moodTag: 'NAMIETNOSC' },
-  { id: 'breakup', name: 'Rozstanie', category: 'EMOTION', moodTag: 'NAPIECIE' },
+  { id: 'walk', name: 'Walk', category: 'MEETINGS', moodTag: 'BLISKOSC' },
+  { id: 'picnic', name: 'Picnic', category: 'MEETINGS', moodTag: 'BLISKOSC' },
+  { id: 'cinema', name: 'Cinema', category: 'MEETINGS', moodTag: 'BLISKOSC' },
+  { id: 'concert', name: 'Concert', category: 'MEETINGS', moodTag: 'BLISKOSC' },
+  { id: 'trip', name: 'Trip', category: 'MEETINGS', moodTag: 'BLISKOSC' },
+  { id: 'night', name: 'Night Together', category: 'MEETINGS', moodTag: 'NAMIETNOSC' },
+  // EMOTIONS
+  { id: 'important_talk', name: 'Important Conversation', category: 'EMOTION', moodTag: 'NAPIECIE' },
+  { id: 'argument', name: 'Argument', category: 'EMOTION', moodTag: 'NAPIECIE' },
+  { id: 'reconciliation', name: 'Reconciliation', category: 'EMOTION', moodTag: 'RADOSC' },
+  { id: 'intimate_moment', name: 'Close Moment', category: 'EMOTION', moodTag: 'NAMIETNOSC' },
+  { id: 'breakup', name: 'Breakup', category: 'EMOTION', moodTag: 'NAPIECIE' },
   // OBJECTS
-  { id: 'gift', name: 'Prezent', category: 'OBJECTS', moodTag: 'RADOSC' },
-  { id: 'flowers', name: 'Kwiaty', category: 'OBJECTS', moodTag: 'RADOSC' },
-  { id: 'surprise', name: 'Niespodzianka', category: 'OBJECTS', moodTag: 'RADOSC' },
+  { id: 'gift', name: 'Gift', category: 'OBJECTS', moodTag: 'RADOSC' },
+  { id: 'flowers', name: 'Flowers', category: 'OBJECTS', moodTag: 'RADOSC' },
+  { id: 'surprise', name: 'Surprise', category: 'OBJECTS', moodTag: 'RADOSC' },
 ];
 
 function requiresDuration(category: GlyphCategory, id: string): boolean {
@@ -63,22 +65,23 @@ export const GLYPH_MAP: Record<string, Glyph> = Object.fromEntries(
   GLYPHS.map((g) => [g.id, g])
 );
 
+// Category labels doubling as "incident type" section headers in New Entry / Add Activity.
 export const GLYPH_CATEGORIES: { key: GlyphCategory; label: string }[] = [
-  { key: 'CONTACT', label: 'Kontakt' },
-  { key: 'DATING', label: 'Randkowanie' },
-  { key: 'MEETINGS', label: 'Spotkania' },
-  { key: 'EMOTION', label: 'Emocje' },
-  { key: 'OBJECTS', label: 'Przedmioty' },
+  { key: 'CONTACT', label: 'Contact' },
+  { key: 'DATING', label: 'Dating' },
+  { key: 'MEETINGS', label: 'Meetings' },
+  { key: 'EMOTION', label: 'Emotions' },
+  { key: 'OBJECTS', label: 'Objects' },
 ];
 
-// Domyślny wariant graficzny dla `drink` to wine — patrz sekcja 25 MD (drugi wariant
-// `drink_OPTION_cocktail` zostaje w assetach; podmiana to jedna linijka w mapie niżej).
+// Default graphic variant for `drink` is wine (second variant `drink_OPTION_cocktail`
+// stays in assets — swapping it is a one-line change in the map below).
 //
-// Pliki `*_transparent.png` — sekcja 25 MD v6: oryginalne assety klienta miały kanał
-// alfa w 100% nieprzezroczysty (czarne kwadraty zamiast wtapiania się w tło). Naprawione
-// algorytmicznie (luma-key: alpha = max(r,g,b), tło niemal-czarne staje się przezroczyste,
-// świecąca linia zachowuje miękki, częściowo przezroczysty glow). Rysunek i kolor
-// oryginałów były poprawne — problem dotyczył wyłącznie kanału alfa.
+// `*_transparent.png` files: the original client PNGs had a fully opaque alpha
+// channel (black squares instead of blending into the background). Fixed
+// algorithmically (luma-key: alpha = max(r,g,b) — the near-black background becomes
+// transparent, the glowing line keeps its soft, partially transparent glow). The
+// artwork and color of the originals were always correct — only the alpha was broken.
 export const GLYPH_ICONS: Record<string, any> = {
   first_message: require('../../assets/glyphs/first_message_transparent.png'),
   message: require('../../assets/glyphs/message_transparent.png'),
@@ -109,7 +112,9 @@ export const GLYPH_ICONS: Record<string, any> = {
   surprise: require('../../assets/glyphs/surprise_transparent.png'),
 };
 
-// Runy emocji (Poziom 1) — jedna na tag nastroju, widoczne wyłącznie na strukturze DNA.
+// Mood-tag runes — retained for compatibility with existing glyph-cluster code;
+// no longer rendered on a DNA/galaxy visualization (that screen is gone), but the
+// underlying mood-tag-to-color mapping is still used for calendar day markers.
 export const RUNE_ICONS: Record<MoodTag, any> = {
   BLISKOSC: require('../../assets/runes/closeness_transparent.png'),
   TESKNOTA: require('../../assets/runes/longing_transparent.png'),

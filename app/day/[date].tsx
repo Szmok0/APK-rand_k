@@ -1,6 +1,5 @@
-// DAY DETAIL jako route — od v4 używany wyłącznie przez Timeline ("tap → detail",
-// sekcja 22). W Kalendarzu ten sam widok jest osadzony inline (sekcja 9 MD v6) przez
-// DayDetailPanel, bez nawigacji na osobny ekran.
+// DAY DETAIL route — deep-link target (e.g. from Evidence Archive). In Calendar
+// the same content is embedded inline via DayDetailPanel, no navigation needed.
 
 import { useLocalSearchParams } from 'expo-router';
 import React from 'react';
@@ -9,16 +8,11 @@ import { ScrollView, StyleSheet } from 'react-native';
 import { DayDetailPanel } from '@/components/DayDetailPanel';
 import { Header, Screen } from '@/components/ui';
 import { spacing } from '@/theme/tokens';
-import { fromDateKey } from '@/utils/dates';
-
-const MONTHS_GENITIVE = [
-  'stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca',
-  'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia',
-];
+import { dateLabelUpper, fromDateKey } from '@/utils/dates';
 
 function formatDate(dateKey: string) {
   const d = fromDateKey(dateKey);
-  return `${String(d.getDate()).padStart(2, '0')} ${MONTHS_GENITIVE[d.getMonth()]} ${d.getFullYear()}`;
+  return `${dateLabelUpper(dateKey)}, ${d.getFullYear()}`;
 }
 
 export default function DayDetailScreen() {
@@ -26,7 +20,7 @@ export default function DayDetailScreen() {
 
   return (
     <Screen>
-      <Header title={formatDate(date).toUpperCase()} />
+      <Header title={`CASE FILE — ${formatDate(date)}`} />
       <ScrollView contentContainerStyle={styles.content}>
         <DayDetailPanel date={date} />
       </ScrollView>

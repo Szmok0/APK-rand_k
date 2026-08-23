@@ -37,34 +37,40 @@ export function dayOfYear(date: Date): number {
   return Math.floor(diff / (1000 * 60 * 60 * 24));
 }
 
-const MONTH_NAMES_PL = [
-  'Styczeń',
-  'Luty',
-  'Marzec',
-  'Kwiecień',
-  'Maj',
-  'Czerwiec',
-  'Lipiec',
-  'Sierpień',
-  'Wrzesień',
-  'Październik',
-  'Listopad',
-  'Grudzień',
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
-const WEEKDAY_NAMES_PL = ['PON', 'WT', 'ŚR', 'CZW', 'PT', 'SOB', 'ND'];
+const WEEKDAY_NAMES = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
 export function monthLabel(year: number, month: number): string {
-  return `${MONTH_NAMES_PL[month]} ${year}`;
+  return `${MONTH_NAMES[month]} ${year}`;
 }
 
 export function weekdayLabels(): string[] {
-  return WEEKDAY_NAMES_PL;
+  return WEEKDAY_NAMES;
 }
 
 export function dayLabelShort(key: string): string {
   const d = fromDateKey(key);
-  return WEEKDAY_NAMES_PL[(d.getDay() + 6) % 7];
+  return WEEKDAY_NAMES[(d.getDay() + 6) % 7];
+}
+
+// 'MAY 26' style — used on the Case Day ticket header (Calendar) and exhibit dates.
+export function dateLabelUpper(key: string): string {
+  const d = fromDateKey(key);
+  return `${MONTH_NAMES[d.getMonth()].slice(0, 3).toUpperCase()} ${d.getDate()}`;
 }
 
 // Zwraca siatkę dni miesiąca (poniedziałek-start), z dniami z sąsiednich miesięcy

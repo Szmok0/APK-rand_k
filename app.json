@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Zu'z Diary",
+    "name": "Zuza's Diary",
     "slug": "APK-rand_k",
     "version": "1.0.0",
     "scheme": "zuzdiary",
@@ -11,7 +11,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.zuzdiary.app",
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "Zu'z Diary potrzebuje dostępu do galerii, żeby dodać zdjęcie do wspomnienia."
+        "NSPhotoLibraryUsageDescription": "Zuza's Diary needs access to your photos to attach evidence."
       }
     },
     "android": {
@@ -33,7 +33,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Zu'z Diary potrzebuje dostępu do galerii, żeby dodać zdjęcie do wspomnienia."
+          "photosPermission": "Zuza's Diary needs access to your photos to attach evidence."
         }
       ],
       [

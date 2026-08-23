@@ -25,7 +25,7 @@ export function SettingsRow({
       disabled={disabled || !onPress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed, disabled && styles.disabled]}
     >
-      <Ionicons name={icon} size={20} color={danger ? '#D8593A' : colors.gold} style={{ width: 28 }} />
+      <Ionicons name={icon} size={20} color={danger ? colors.red : colors.gold} style={{ width: 28 }} />
       <View style={{ flex: 1 }}>
         <Text style={[styles.label, danger && styles.danger]}>{label}</Text>
         {sublabel && <Text style={styles.sublabel}>{sublabel}</Text>}
@@ -62,6 +62,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   danger: {
-    color: '#D8593A',
+    color: colors.red,
   },
 });

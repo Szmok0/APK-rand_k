@@ -1,25 +1,18 @@
-// EKRAN SPLASH — sekcja 3 MD. Statyczny, spersonalizowany, bez PIN-u, bez timera.
-// Motyw dinozaura występuje WYŁĄCZNIE tutaj — reszta appki zostaje w 100% zgodna
-// z mockupem (bez dinozaurów w tle). Grafika (dino + tytuł "Zu'z Diary") jest
-// gotowym assetem dostarczonym przez klienta — jeden statyczny plik, bez
-// żadnego silnika wizualizacji.
+// START / COVER — CASE_LOG_MASTER section 5: poster language, no loading
+// animation, direct entry. Dinosaur art is the one existing approved asset that
+// already matches this screen's tone (it always lived only on this splash).
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { GoldButton } from '@/components/ui';
-import { colors, spacing } from '@/theme/tokens';
+import { colors, spacing, typography } from '@/theme/tokens';
 
-export default function SplashScreen() {
+export default function CoverScreen() {
   return (
     <View style={styles.container}>
-      {/* "contain", nie "cover": grafika ma wpisany tytuł u góry (proporcje 2:3) —
-          na typowych, węższych proporcjach telefonu "cover" ucinałby napis
-          w poziomie. "contain" gwarantuje, że cały kadr (tytuł + dino) zawsze
-          mieści się w ekranie, z niewidocznym dopełnieniem (tło obrazu jest
-          czarne, praktycznie identyczne z tłem appki). */}
       <Image
         source={require('../assets/splash-dino.jpg')}
         style={[StyleSheet.absoluteFill, styles.artwork]}
@@ -27,13 +20,15 @@ export default function SplashScreen() {
       />
 
       <LinearGradient
-        colors={['transparent', 'rgba(5,4,10,0.85)']}
+        colors={['transparent', 'rgba(12,10,8,0.9)']}
         style={styles.fade}
         pointerEvents="none"
       />
 
       <View style={styles.footer}>
-        <GoldButton label="Przekrocz próg" onPress={() => router.replace('/start')} />
+        <Text style={styles.tagline}>PSYCHOLOGICAL WARFARE{'\n'}IN THE TINDER JUNGLE</Text>
+        <Text style={styles.subtagline}>Some secrets should stay extinct.</Text>
+        <GoldButton label="Open Case File" onPress={() => router.replace('/(tabs)/home')} style={{ marginTop: spacing.lg }} />
       </View>
     </View>
   );
@@ -45,9 +40,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   artwork: {
-    // Zapasowa jawna szerokość/wysokość — samo `absoluteFill` (top/left/right/
-    // bottom: 0) potrafi nie wystarczyć do rozciągnięcia obrazu na web, jeśli
-    // statyczny asset niesie własne wymiary intrinsic.
     width: '100%',
     height: '100%',
   },
@@ -56,7 +48,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: '35%',
+    height: '45%',
   },
   footer: {
     position: 'absolute',
@@ -65,5 +57,18 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.xxl,
+  },
+  tagline: {
+    ...typography.title,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  subtagline: {
+    color: colors.textFaint,
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: spacing.xs,
+    fontStyle: 'italic',
   },
 });

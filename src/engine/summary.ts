@@ -87,3 +87,29 @@ export function computeSummary(activities: Activity[]): Summary {
     longestGap: longestGap(activities),
   };
 }
+
+export function incidentCount(activities: Activity[]): number {
+  return activities.filter((a) => a.importance === 2).length;
+}
+
+// The 5 fixed HOME stat concepts (HOME_APPROVED_TECH_SPEC.md): TIME, ENCOUNTERS,
+// DMs, EVIDENCE, INCIDENTS — all derived, never independently stored or shown
+// as a percentage. EVIDENCE == total exhibit count (Evidence Archive is a 1:1
+// derived view over Activity, see src/engine/evidence.ts).
+export type HomeStats = {
+  time: number;
+  encounters: number;
+  dms: number;
+  evidence: number;
+  incidents: number;
+};
+
+export function computeHomeStats(activities: Activity[]): HomeStats {
+  return {
+    time: totalHours(activities),
+    encounters: meetingCount(activities),
+    dms: messageCount(activities),
+    evidence: activities.length,
+    incidents: incidentCount(activities),
+  };
+}

@@ -1,14 +1,19 @@
-// Jeden store, kilka rendererów (sekcja 2 MD) — Calendar/Timeline/START czytają z tego
-// samego Activity[]. Lokalny magazyn JSON (AsyncStorage), bez SQLite (sekcja 17).
+// One store, several screens read it (Home/Calendar/Evidence Archive all read the
+// same Activity[]). Local JSON storage (AsyncStorage), no SQLite.
+//
+// Storage keys were renamed for the noir rebuild (@zuz-diary/* -> @zuza-case/*) —
+// this is the "clean start" the product owner asked for: old test data under the
+// previous keys is simply never read again, no migration needed.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-import type { Activity, ArchiveEntry, ExportFile, Relationship } from '@/types/models';
+import type { Activity, ArchiveEntry, CaseMeta, ExportFile, Relationship } from '@/types/models';
 import { todayKey } from '@/utils/dates';
 
-const RELATIONSHIP_KEY = '@zuz-diary/relationship';
-const ARCHIVES_KEY = '@zuz-diary/archives';
+const RELATIONSHIP_KEY = '@zuza-case/activities';
+const ARCHIVES_KEY = '@zuza-case/archives';
+const CASE_META_KEY = '@zuza-case/meta';
 
 function newId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
@@ -16,6 +21,17 @@ function newId(): string {
 
 function emptyRelationship(): Relationship {
   return { activities: [], startedAt: todayKey() };
+}
+
+// Fixed case identity — see docs/ZUZA_CASE_LOG_CLAUDE_CODE_MASTER.md section 6.
+// This is data, not artwork: never bake it into a background image.
+function defaultCaseMeta(): CaseMeta {
+  return {
+    caseNumber: '001',
+    alias: 'THE LID',
+    subjectName: 'ZUZA',
+    firstContactDate: '2026-08-04',
+  };
 }
 
 export type UpsertActivityInput = {
@@ -33,6 +49,8 @@ type RelationshipContextValue = {
   activities: Activity[];
   startedAt: string;
   archives: ArchiveEntry[];
+  caseMeta: CaseMeta;
+  updateCaseMeta: (patch: Partial<CaseMeta>) => Promise<void>;
   getActivityByDate: (date: string) => Activity | undefined;
   upsertActivity: (input: UpsertActivityInput) => Activity;
   deleteActivity: (id: string) => void;
@@ -47,18 +65,21 @@ export function RelationshipProvider({ children }: { children: React.ReactNode }
   const [loading, setLoading] = useState(true);
   const [relationship, setRelationship] = useState<Relationship>(emptyRelationship());
   const [archives, setArchives] = useState<ArchiveEntry[]>([]);
+  const [caseMeta, setCaseMeta] = useState<CaseMeta>(defaultCaseMeta());
 
   useEffect(() => {
     (async () => {
       try {
-        const [relRaw, archRaw] = await Promise.all([
+        const [relRaw, archRaw, metaRaw] = await Promise.all([
           AsyncStorage.getItem(RELATIONSHIP_KEY),
           AsyncStorage.getItem(ARCHIVES_KEY),
+          AsyncStorage.getItem(CASE_META_KEY),
         ]);
         if (relRaw) setRelationship(JSON.parse(relRaw));
         if (archRaw) setArchives(JSON.parse(archRaw));
+        if (metaRaw) setCaseMeta({ ...defaultCaseMeta(), ...JSON.parse(metaRaw) });
       } catch (e) {
-        console.warn('Nie udało się wczytać danych', e);
+        console.warn('Failed to load stored case data', e);
       } finally {
         setLoading(false);
       }
@@ -75,14 +96,23 @@ export function RelationshipProvider({ children }: { children: React.ReactNode }
     await AsyncStorage.setItem(ARCHIVES_KEY, JSON.stringify(next));
   }, []);
 
+  const updateCaseMeta = useCallback(
+    async (patch: Partial<CaseMeta>) => {
+      const next = { ...caseMeta, ...patch };
+      setCaseMeta(next);
+      await AsyncStorage.setItem(CASE_META_KEY, JSON.stringify(next));
+    },
+    [caseMeta]
+  );
+
   const getActivityByDate = useCallback(
     (date: string) => relationship.activities.find((a) => a.date === date),
     [relationship.activities]
   );
 
-  // Zasada scalania przy kolizji dnia (sekcja 12): jeśli dzień już ma Activity,
-  // UI ładuje jej stan do formularza przed edycją (patrz app/add-activity.tsx) —
-  // tutaj po prostu robimy pełny upsert po dacie, zachowując id/createdAt.
+  // Same-day collision rule: if a day already has an Activity, the UI loads its
+  // state into the form before editing (see app/add-activity.tsx) — here we just
+  // do a full upsert by date, keeping id/createdAt stable.
   const upsertActivity = useCallback(
     (input: UpsertActivityInput): Activity => {
       const now = new Date().toISOString();
@@ -127,8 +157,9 @@ export function RelationshipProvider({ children }: { children: React.ReactNode }
     };
   }, [relationship]);
 
-  // "Zacznij nową historię" (sekcja 10): auto-archiwizacja bieżących danych jako
-  // wpis w lokalnym archiwum (ten sam format co eksport), potem czyszczenie stanu.
+  // "Close & clear case" (Settings): archives the current case as a closed file
+  // (same schema as export), then resets state — the case number/alias stay,
+  // only activities reset, matching the single-fixed-case product decision.
   const startNewStory = useCallback(async () => {
     const entry: ArchiveEntry = {
       id: newId(),
@@ -143,7 +174,7 @@ export function RelationshipProvider({ children }: { children: React.ReactNode }
   const importRelationship = useCallback(
     async (file: ExportFile) => {
       if (file.schema !== 'zuz-diary/relationship') {
-        throw new Error('Nieprawidłowy format pliku');
+        throw new Error('Invalid case file format');
       }
       await persistRelationship(file.relationship);
     },
@@ -156,6 +187,8 @@ export function RelationshipProvider({ children }: { children: React.ReactNode }
       activities: relationship.activities,
       startedAt: relationship.startedAt,
       archives,
+      caseMeta,
+      updateCaseMeta,
       getActivityByDate,
       upsertActivity,
       deleteActivity,
@@ -167,6 +200,8 @@ export function RelationshipProvider({ children }: { children: React.ReactNode }
       loading,
       relationship,
       archives,
+      caseMeta,
+      updateCaseMeta,
       getActivityByDate,
       upsertActivity,
       deleteActivity,
@@ -181,6 +216,6 @@ export function RelationshipProvider({ children }: { children: React.ReactNode }
 
 export function useRelationship(): RelationshipContextValue {
   const ctx = useContext(RelationshipContext);
-  if (!ctx) throw new Error('useRelationship musi być użyty wewnątrz RelationshipProvider');
+  if (!ctx) throw new Error('useRelationship must be used inside RelationshipProvider');
   return ctx;
 }

@@ -1,7 +1,6 @@
-// Treść "Day Detail" — sekcja 9 MD v6: od v4 to już nie osobny ekran nawigacyjny,
-// tylko współdzielony komponent. Osadzony inline w Kalendarzu (panel podglądu pod
-// siatką) i ponownie użyty przez Timeline (tap → nawigacja do route'a day/[date],
-// który renderuje ten sam komponent w pełnoekranowym kontekście).
+// "Case Day" content — shared between the inline Calendar preview panel and the
+// full-screen day/[date] route. Not a separate navigational concept, just one
+// component embedded in two places (CALENDAR_TECH_SPEC section "Selected-day area").
 
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -13,7 +12,7 @@ import { GlyphIcon } from '@/components/GlyphIcon';
 import { GoldButton, OutlineButton } from '@/components/ui';
 import * as Sharing from 'expo-sharing';
 import { useRelationship } from '@/store/RelationshipStore';
-import { colors, radius, spacing, typography } from '@/theme/tokens';
+import { colors, priorityColors, priorityLabels, radius, spacing, typography } from '@/theme/tokens';
 import { durationHours } from '@/utils/dates';
 
 type Props = {
@@ -29,10 +28,10 @@ export function DayDetailPanel({ date }: Props) {
 
   function handleDelete() {
     if (!activity) return;
-    Alert.alert('Usunąć wpis?', 'Tej operacji nie można cofnąć.', [
-      { text: 'Anuluj', style: 'cancel' },
+    Alert.alert('Remove this incident?', 'History will not argue. This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Usuń',
+        text: 'Remove',
         style: 'destructive',
         onPress: () => deleteActivity(activity.id),
       },
@@ -45,16 +44,17 @@ export function DayDetailPanel({ date }: Props) {
     if (activity.photoUri && canShare) {
       await Sharing.shareAsync(activity.photoUri);
     } else {
-      Alert.alert('Udostępnianie', 'To urządzenie nie obsługuje udostępniania w tym kontekście.');
+      Alert.alert('Sharing', 'This device does not support sharing in this context.');
     }
   }
 
   if (!activity) {
     return (
       <View style={styles.empty}>
-        <Text style={styles.emptyText}>Brak zapisanej aktywności tego dnia.</Text>
+        <Text style={styles.emptyText}>No incident recorded.</Text>
+        <Text style={styles.emptySubtext}>This does not prove nothing happened.</Text>
         <GoldButton
-          label="+ Dodaj Aktywność"
+          label="+ Add Activity"
           onPress={() => router.push({ pathname: '/add-activity', params: { date } })}
           style={{ marginTop: spacing.lg }}
         />
@@ -80,24 +80,25 @@ export function DayDetailPanel({ date }: Props) {
       )}
 
       {activity.importance > 0 && (
-        <View style={styles.importanceRow}>
-          {Array.from({ length: activity.importance }).map((_, i) => (
-            <Ionicons key={i} name="star" size={14} color={colors.gold} />
-          ))}
+        <View style={[styles.priorityBadge, { borderColor: priorityColors[activity.importance] }]}>
+          <Text style={[styles.priorityLabel, { color: priorityColors[activity.importance] }]}>
+            {priorityLabels[activity.importance]}
+          </Text>
         </View>
       )}
 
       {activity.photoUri && <Image source={{ uri: activity.photoUri }} style={styles.photo} />}
 
       <View style={styles.noteBox}>
+        <Text style={styles.noteBoxLabel}>REPORT</Text>
         {activity.note ? (
           noteRevealed ? (
             <Text style={styles.noteText}>{activity.note}</Text>
           ) : (
-            <OutlineButton label="Odkryj notatkę" onPress={() => setNoteRevealed(true)} />
+            <OutlineButton label="Reveal Report" onPress={() => setNoteRevealed(true)} />
           )
         ) : (
-          <Text style={styles.noNote}>Brak notatki tego dnia.</Text>
+          <Text style={styles.noNote}>No written statement attached.</Text>
         )}
       </View>
 
@@ -125,7 +126,13 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl,
   },
   emptyText: {
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  emptySubtext: {
     color: colors.textFaint,
+    fontSize: 12,
+    marginTop: 4,
   },
   glyphRow: {
     flexDirection: 'row',
@@ -147,25 +154,38 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     fontSize: 13,
   },
-  importanceRow: {
-    flexDirection: 'row',
-    gap: 4,
+  priorityBadge: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
     marginTop: spacing.sm,
+  },
+  priorityLabel: {
+    ...typography.stamp,
+    fontSize: 10,
   },
   photo: {
     width: '100%',
     height: 180,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     marginTop: spacing.lg,
   },
   noteBox: {
     marginTop: spacing.lg,
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
     alignItems: 'flex-start',
+  },
+  noteBoxLabel: {
+    color: colors.textFaint,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    marginBottom: spacing.xs,
   },
   noteText: {
     color: colors.textPrimary,

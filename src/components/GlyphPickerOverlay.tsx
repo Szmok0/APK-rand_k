@@ -20,10 +20,10 @@ export function GlyphPickerOverlay({ selected, onToggle, onDone }: Props) {
   return (
     <View style={[styles.overlay, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>WYBIERZ GLIFY</Text>
+        <Text style={styles.title}>SELECT INCIDENT TYPE</Text>
         <Pressable onPress={onDone} hitSlop={10} style={styles.doneBtn}>
           <Ionicons name="checkmark" size={16} color={colors.background} />
-          <Text style={styles.doneLabel}>Gotowe</Text>
+          <Text style={styles.doneLabel}>Done</Text>
         </Pressable>
       </View>
       <ScrollView contentContainerStyle={styles.content}>
