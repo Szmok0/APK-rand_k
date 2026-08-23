@@ -78,19 +78,21 @@ export function DayDetailPanel({ date }: Props) {
         </View>
       )}
 
-      <View style={styles.timeFrameWrap}>
-        <Image source={require('../../assets/noir/calendar/frame_time.png')} style={styles.readoutFrameImg} />
-        <View style={styles.timeValueSlot}>
-          <Text style={styles.readoutValueText} numberOfLines={1} adjustsFontSizeToFit>
-            {hours > 0 ? `${activity.startTime} – ${activity.endTime}` : '—'}
-          </Text>
+      <View style={styles.readoutRow}>
+        <View style={styles.timeFrameWrap}>
+          <Image source={require('../../assets/noir/calendar/frame_time.png')} style={styles.readoutFrameImg} />
+          <View style={styles.timeValueSlot}>
+            <Text style={styles.readoutValueText} numberOfLines={1} adjustsFontSizeToFit>
+              {hours > 0 ? `${activity.startTime}–${activity.endTime}` : '—'}
+            </Text>
+          </View>
         </View>
-      </View>
 
-      <View style={styles.evidenceFrameWrap}>
-        <Image source={require('../../assets/noir/calendar/frame_evidence.png')} style={styles.readoutFrameImg} />
-        <View style={styles.evidenceValueSlot}>
-          <Text style={styles.readoutValueText}>{activity.glyphIds.length}</Text>
+        <View style={styles.evidenceFrameWrap}>
+          <Image source={require('../../assets/noir/calendar/frame_evidence.png')} style={styles.readoutFrameImg} />
+          <View style={styles.evidenceValueSlot}>
+            <Text style={styles.readoutValueText}>{activity.glyphIds.length}</Text>
+          </View>
         </View>
       </View>
 
@@ -113,19 +115,22 @@ export function DayDetailPanel({ date }: Props) {
 
       {activity.photoUri && <Image source={{ uri: activity.photoUri }} style={styles.photo} />}
 
-      <View style={styles.reportFrameWrap}>
-        <Image source={require('../../assets/noir/calendar/frame_report.png')} style={styles.readoutFrameImg} />
-        <View style={styles.reportContentSlot}>
-          {activity.note ? (
-            noteRevealed ? (
-              <Text style={styles.noteText}>{activity.note}</Text>
-            ) : (
-              <OutlineButton label="Reveal Report" onPress={() => setNoteRevealed(true)} />
-            )
+      <View style={styles.reportCard}>
+        <Text style={styles.reportLabel}>REPORT</Text>
+        {activity.note ? (
+          noteRevealed ? (
+            <Text style={styles.noteText}>{activity.note}</Text>
           ) : (
-            <Text style={styles.noNote}>No written statement attached.</Text>
-          )}
-        </View>
+            <OutlineButton label="Reveal Report" onPress={() => setNoteRevealed(true)} />
+          )
+        ) : (
+          <Text style={styles.noNote}>No written statement attached.</Text>
+        )}
+        <Image
+          source={require('../../assets/noir/calendar/tape_piece.png')}
+          style={styles.reportTape}
+          resizeMode="contain"
+        />
       </View>
 
       <View style={styles.actions}>
@@ -180,20 +185,24 @@ const styles = StyleSheet.create({
     marginTop: 3,
     textAlign: 'center',
   },
-  // TIME / EVIDENCE / REPORT are the real steampunk-frame assets from the
-  // pack — full-width bars, stacked (their own aspect ratio is a short wide
-  // bar, not suited to sitting side by side in a narrow column). Each
-  // wrap's aspectRatio matches its source PNG exactly so the value slot
-  // (measured off the actual dark-red panel pixels) always lands inside
-  // the frame's felt inset regardless of screen width — same rule as Home.
+  // TIME / EVIDENCE are the real steampunk-frame assets from the pack, side
+  // by side per the product owner's asset-sheet layout — sized down (flex:1
+  // each) so they don't crowd out the note field below. REPORT dropped the
+  // matching frame asset entirely: a fixed-aspect image can't grow with a
+  // variable-length note, so it's a plain code-drawn card instead (see
+  // reportCard below), sized to its content like any other View.
+  readoutRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.md,
+  },
   readoutFrameImg: {
     width: '100%',
     height: '100%',
   },
   timeFrameWrap: {
-    width: '100%',
+    width: '48%',
     aspectRatio: 474 / 165,
-    marginTop: spacing.md,
     position: 'relative',
   },
   timeValueSlot: {
@@ -206,9 +215,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   evidenceFrameWrap: {
-    width: '100%',
+    width: '48%',
     aspectRatio: 461 / 120,
-    marginTop: spacing.sm,
     position: 'relative',
   },
   evidenceValueSlot: {
@@ -222,6 +230,8 @@ const styles = StyleSheet.create({
   },
   readoutValueText: {
     ...typography.stamp,
+    fontSize: 9,
+    letterSpacing: 0,
     color: colors.textPrimary,
   },
   glyphRow: {
@@ -258,21 +268,32 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     marginTop: spacing.lg,
   },
-  reportFrameWrap: {
-    width: '100%',
-    aspectRatio: 965 / 334,
+  // Floating REPORT card — plain code, sized to its content (no fixed
+  // aspectRatio) so it grows or shrinks with the actual note length,
+  // instead of the frame_report.png asset it replaced.
+  reportCard: {
     marginTop: spacing.lg,
-    position: 'relative',
-  },
-  reportContentSlot: {
-    position: 'absolute',
-    left: '8.2%',
-    top: '30.8%',
-    width: '88%',
-    height: '57.2%',
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    padding: spacing.md,
     alignItems: 'flex-start',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.sm,
+  },
+  reportLabel: {
+    ...typography.stamp,
+    color: colors.textFaint,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    marginBottom: spacing.xs,
+  },
+  reportTape: {
+    position: 'absolute',
+    right: -10,
+    bottom: -10,
+    width: 56,
+    height: 28,
+    transform: [{ rotate: '-8deg' }],
   },
   noteText: {
     color: colors.textPrimary,
