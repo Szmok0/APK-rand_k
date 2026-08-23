@@ -31,7 +31,7 @@ export default function CalendarScreen() {
     <Screen>
       <Image
         source={require('../../assets/noir/backgrounds/calendar_bg.jpg')}
-        style={StyleSheet.absoluteFill}
+        style={[StyleSheet.absoluteFill, styles.backgroundImage]}
         resizeMode="cover"
       />
       <View style={[StyleSheet.absoluteFill, styles.scrim]} />
@@ -81,6 +81,12 @@ export default function CalendarScreen() {
 }
 
 const styles = StyleSheet.create({
+  // See app/index.tsx — StyleSheet.absoluteFill alone doesn't stretch an Image
+  // correctly on React Native Web without an explicit 100%/100% too.
+  backgroundImage: {
+    width: '100%',
+    height: '100%',
+  },
   scrim: {
     backgroundColor: 'rgba(12, 10, 8, 0.7)',
   },

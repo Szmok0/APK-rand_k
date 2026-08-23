@@ -1,34 +1,29 @@
 // START / COVER — CASE_LOG_MASTER section 5: poster language, no loading
-// animation, direct entry. Dinosaur art is the one existing approved asset that
-// already matches this screen's tone (it always lived only on this splash).
+// animation, direct entry. The approved poster art already bakes in the full
+// tagline ("ZUZA — PSYCHOLOGICAL WARFARE", "SOME SECRETS SHOULD STAY EXTINCT",
+// "YOUR TINDER. YOUR CASE. YOUR TRUTH.") — this screen only adds the button.
 
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GoldButton } from '@/components/ui';
-import { colors, spacing, typography } from '@/theme/tokens';
+import { colors, spacing } from '@/theme/tokens';
 
 export default function CoverScreen() {
+  const insets = useSafeAreaInsets();
+
   return (
     <View style={styles.container}>
       <Image
-        source={require('../assets/splash-dino.jpg')}
+        source={require('../assets/noir/cover.jpg')}
         style={[StyleSheet.absoluteFill, styles.artwork]}
-        resizeMode="contain"
+        resizeMode="cover"
       />
 
-      <LinearGradient
-        colors={['transparent', 'rgba(12,10,8,0.9)']}
-        style={styles.fade}
-        pointerEvents="none"
-      />
-
-      <View style={styles.footer}>
-        <Text style={styles.tagline}>PSYCHOLOGICAL WARFARE{'\n'}IN THE TINDER JUNGLE</Text>
-        <Text style={styles.subtagline}>Some secrets should stay extinct.</Text>
-        <GoldButton label="Open Case File" onPress={() => router.replace('/(tabs)/home')} style={{ marginTop: spacing.lg }} />
+      <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.xl }]}>
+        <GoldButton label="Open the Case" onPress={() => router.replace('/(tabs)/home')} />
       </View>
     </View>
   );
@@ -39,16 +34,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  // `StyleSheet.absoluteFill` alone isn't enough on React Native Web here — the
+  // image's intrinsic size otherwise wins over the absolute-position stretch,
+  // so an explicit 100%/100% is required too (real, reproduced bug: without
+  // this the cover art rendered zoomed/cropped instead of filling the screen).
   artwork: {
     width: '100%',
     height: '100%',
-  },
-  fade: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '45%',
   },
   footer: {
     position: 'absolute',
@@ -56,19 +48,5 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xxl,
-  },
-  tagline: {
-    ...typography.title,
-    color: colors.textPrimary,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  subtagline: {
-    color: colors.textFaint,
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: spacing.xs,
-    fontStyle: 'italic',
   },
 });

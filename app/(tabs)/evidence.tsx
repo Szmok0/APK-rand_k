@@ -72,7 +72,7 @@ function ExhibitCard({ exhibit }: { exhibit: Exhibit }) {
     >
       <Image
         source={require('../../assets/noir/evidence/evidence_card_frame.png')}
-        style={StyleSheet.absoluteFill}
+        style={[StyleSheet.absoluteFill, styles.cardFrame]}
         resizeMode="stretch"
       />
       <View style={styles.cardContent}>
@@ -112,6 +112,12 @@ function ExhibitCard({ exhibit }: { exhibit: Exhibit }) {
 }
 
 const styles = StyleSheet.create({
+  // See app/index.tsx — StyleSheet.absoluteFill alone doesn't stretch an Image
+  // correctly on React Native Web without an explicit 100%/100% too.
+  cardFrame: {
+    width: '100%',
+    height: '100%',
+  },
   filterRow: {
     paddingHorizontal: spacing.md,
     marginBottom: spacing.sm,

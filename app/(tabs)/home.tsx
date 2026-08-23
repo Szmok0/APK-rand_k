@@ -38,7 +38,7 @@ export default function HomeScreen() {
     <Screen>
       <Image
         source={require('../../assets/noir/backgrounds/desk_bg.jpg')}
-        style={StyleSheet.absoluteFill}
+        style={[StyleSheet.absoluteFill, styles.backgroundImage]}
         resizeMode="cover"
       />
       <View style={[StyleSheet.absoluteFill, styles.scrim]} />
@@ -113,6 +113,13 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  // `StyleSheet.absoluteFill` alone isn't enough on React Native Web — the
+  // image's intrinsic size wins over the absolute-position stretch without an
+  // explicit 100%/100% too (reproduced bug, see app/index.tsx for detail).
+  backgroundImage: {
+    width: '100%',
+    height: '100%',
+  },
   scrim: {
     backgroundColor: 'rgba(12, 10, 8, 0.62)',
   },
