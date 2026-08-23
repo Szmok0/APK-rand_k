@@ -1,9 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors, radius, spacing, typography } from '@/theme/tokens';
+import { colors, spacing, typography } from '@/theme/tokens';
 import { monthGrid, monthLabel, weekdayLabels } from '@/utils/dates';
+
+// The real grid asset from the pack: a 7x6 grid of thin gold lines baked
+// into a dark leather/map texture (decorative compass/folder-stack/inkwell
+// corner flourishes). Its line positions were measured directly off the
+// pixels — see GRID_COL/GRID_ROW below.
+const GRID_BG = require('../../assets/noir/calendar/grid_bg.jpg');
+const GRID_COL_LEFT = 3.43; // %
+const GRID_COL_WIDTH = 13.28; // %
+const GRID_ROW_TOP = 8.85; // %
+const GRID_ROW_HEIGHT = 13.2; // %
 
 type Props = {
   initialYear?: number;
@@ -12,6 +22,10 @@ type Props = {
   renderCell: (dateKey: string, inMonth: boolean) => React.ReactNode;
   onSelectDay: (dateKey: string) => void;
   compact?: boolean;
+  // Opt-in: render cells positioned onto the real grid_bg.jpg asset instead
+  // of the plain flex-wrap grid. Used by the full Calendar screen only —
+  // Add Activity's compact mini-calendar stays on the plain grid.
+  useGridImage?: boolean;
 };
 
 // Klasyczny widok miesiąca — źródło prawdy (sekcja 9). Reużywany też jako
@@ -23,6 +37,7 @@ export function MonthCalendar({
   renderCell,
   onSelectDay,
   compact,
+  useGridImage,
 }: Props) {
   const now = new Date();
   const [year, setYear] = useState(initialYear ?? now.getFullYear());
@@ -67,17 +82,44 @@ export function MonthCalendar({
         ))}
       </View>
 
-      <View style={styles.grid}>
-        {cells.map(({ key, inMonth }) => (
-          <Pressable
-            key={key}
-            style={[styles.cell, compact && styles.cellCompact]}
-            onPress={() => onSelectDay(key)}
-          >
-            {renderCell(key, inMonth)}
-          </Pressable>
-        ))}
-      </View>
+      {useGridImage ? (
+        <View style={styles.gridImageWrap}>
+          <Image source={GRID_BG} style={styles.gridImage} />
+          {cells.map(({ key, inMonth }, i) => {
+            const col = i % 7;
+            const row = Math.floor(i / 7);
+            return (
+              <Pressable
+                key={key}
+                style={[
+                  styles.gridImageCell,
+                  {
+                    left: `${GRID_COL_LEFT + col * GRID_COL_WIDTH}%`,
+                    top: `${GRID_ROW_TOP + row * GRID_ROW_HEIGHT}%`,
+                    width: `${GRID_COL_WIDTH}%`,
+                    height: `${GRID_ROW_HEIGHT}%`,
+                  },
+                ]}
+                onPress={() => onSelectDay(key)}
+              >
+                {renderCell(key, inMonth)}
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : (
+        <View style={styles.grid}>
+          {cells.map(({ key, inMonth }) => (
+            <Pressable
+              key={key}
+              style={[styles.cell, compact && styles.cellCompact]}
+              onPress={() => onSelectDay(key)}
+            >
+              {renderCell(key, inMonth)}
+            </Pressable>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -115,14 +157,25 @@ const styles = StyleSheet.create({
   cell: {
     width: `${100 / 7}%`,
     aspectRatio: 1,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 2,
   },
   cellCompact: {
-    borderWidth: 0,
     aspectRatio: 1,
+  },
+  gridImageWrap: {
+    width: '100%',
+    aspectRatio: 1,
+    position: 'relative',
+  },
+  gridImage: {
+    width: '100%',
+    height: '100%',
+  },
+  gridImageCell: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

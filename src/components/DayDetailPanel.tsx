@@ -78,20 +78,19 @@ export function DayDetailPanel({ date }: Props) {
         </View>
       )}
 
-      <View style={styles.readoutRow}>
-        <View style={styles.readoutBox}>
-          <Ionicons name="time-outline" size={14} color={colors.textFaint} />
-          <Text style={styles.readoutLabel}>TIME</Text>
-          <Text style={styles.readoutValue}>
+      <View style={styles.timeFrameWrap}>
+        <Image source={require('../../assets/noir/calendar/frame_time.png')} style={styles.readoutFrameImg} />
+        <View style={styles.timeValueSlot}>
+          <Text style={styles.readoutValueText} numberOfLines={1} adjustsFontSizeToFit>
             {hours > 0 ? `${activity.startTime} – ${activity.endTime}` : '—'}
           </Text>
         </View>
-        <View style={styles.readoutBox}>
-          <Ionicons name="folder-outline" size={14} color={colors.textFaint} />
-          <Text style={styles.readoutLabel}>EVIDENCE</Text>
-          <Text style={styles.readoutValue}>
-            {activity.glyphIds.length} {activity.glyphIds.length === 1 ? 'ITEM' : 'ITEMS'}
-          </Text>
+      </View>
+
+      <View style={styles.evidenceFrameWrap}>
+        <Image source={require('../../assets/noir/calendar/frame_evidence.png')} style={styles.readoutFrameImg} />
+        <View style={styles.evidenceValueSlot}>
+          <Text style={styles.readoutValueText}>{activity.glyphIds.length}</Text>
         </View>
       </View>
 
@@ -114,22 +113,19 @@ export function DayDetailPanel({ date }: Props) {
 
       {activity.photoUri && <Image source={{ uri: activity.photoUri }} style={styles.photo} />}
 
-      <View style={styles.noteBox}>
-        <Text style={styles.noteBoxLabel}>REPORT</Text>
-        {activity.note ? (
-          noteRevealed ? (
-            <Text style={styles.noteText}>{activity.note}</Text>
+      <View style={styles.reportFrameWrap}>
+        <Image source={require('../../assets/noir/calendar/frame_report.png')} style={styles.readoutFrameImg} />
+        <View style={styles.reportContentSlot}>
+          {activity.note ? (
+            noteRevealed ? (
+              <Text style={styles.noteText}>{activity.note}</Text>
+            ) : (
+              <OutlineButton label="Reveal Report" onPress={() => setNoteRevealed(true)} />
+            )
           ) : (
-            <OutlineButton label="Reveal Report" onPress={() => setNoteRevealed(true)} />
-          )
-        ) : (
-          <Text style={styles.noNote}>No written statement attached.</Text>
-        )}
-        <Image
-          source={require('../../assets/noir/calendar/tape_piece.png')}
-          style={styles.noteBoxTape}
-          resizeMode="contain"
-        />
+            <Text style={styles.noNote}>No written statement attached.</Text>
+          )}
+        </View>
       </View>
 
       <View style={styles.actions}>
@@ -184,31 +180,49 @@ const styles = StyleSheet.create({
     marginTop: 3,
     textAlign: 'center',
   },
-  readoutRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+  // TIME / EVIDENCE / REPORT are the real steampunk-frame assets from the
+  // pack — full-width bars, stacked (their own aspect ratio is a short wide
+  // bar, not suited to sitting side by side in a narrow column). Each
+  // wrap's aspectRatio matches its source PNG exactly so the value slot
+  // (measured off the actual dark-red panel pixels) always lands inside
+  // the frame's felt inset regardless of screen width — same rule as Home.
+  readoutFrameImg: {
+    width: '100%',
+    height: '100%',
+  },
+  timeFrameWrap: {
+    width: '100%',
+    aspectRatio: 474 / 165,
     marginTop: spacing.md,
+    position: 'relative',
   },
-  readoutBox: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.borderStrong,
-    borderRadius: radius.md,
-    padding: spacing.sm,
+  timeValueSlot: {
+    position: 'absolute',
+    left: '50.6%',
+    top: '43%',
+    width: '44.5%',
+    height: '39.4%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  readoutLabel: {
-    ...typography.caption,
-    color: colors.textFaint,
-    fontSize: 9,
-    letterSpacing: 1,
-    marginTop: 4,
+  evidenceFrameWrap: {
+    width: '100%',
+    aspectRatio: 461 / 120,
+    marginTop: spacing.sm,
+    position: 'relative',
   },
-  readoutValue: {
+  evidenceValueSlot: {
+    position: 'absolute',
+    left: '57.7%',
+    top: '26.7%',
+    width: '23%',
+    height: '53.3%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  readoutValueText: {
+    ...typography.stamp,
     color: colors.textPrimary,
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
   },
   glyphRow: {
     flexDirection: 'row',
@@ -244,32 +258,26 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     marginTop: spacing.lg,
   },
-  noteBox: {
+  reportFrameWrap: {
+    width: '100%',
+    aspectRatio: 965 / 334,
     marginTop: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.borderStrong,
-    padding: spacing.md,
-    alignItems: 'flex-start',
+    position: 'relative',
   },
-  noteBoxTape: {
+  reportContentSlot: {
     position: 'absolute',
-    right: -10,
-    bottom: -10,
-    width: 60,
-    height: 30,
-    transform: [{ rotate: '-8deg' }],
-  },
-  noteBoxLabel: {
-    color: colors.textFaint,
-    fontSize: 10,
-    letterSpacing: 1.5,
-    marginBottom: spacing.xs,
+    left: '8.2%',
+    top: '30.8%',
+    width: '88%',
+    height: '57.2%',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.sm,
   },
   noteText: {
     color: colors.textPrimary,
-    lineHeight: 20,
+    fontSize: 12,
+    lineHeight: 17,
   },
   noNote: {
     color: colors.textFaint,

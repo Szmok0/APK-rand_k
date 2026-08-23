@@ -103,7 +103,10 @@ export function monthGrid(year: number, month: number): { key: string; inMonth: 
   for (let day = 1; day <= daysInMonth; day++) {
     cells.push({ key: toDateKey(new Date(year, month, day)), inMonth: true });
   }
-  while (cells.length % 7 !== 0) {
+  // Always pad to a full 6 rows (42 cells) — a fixed row count so the grid
+  // never resizes month to month (matters now that Calendar overlays this
+  // onto a background image with a fixed 6-row grid baked in).
+  while (cells.length < 42) {
     const last = fromDateKey(cells[cells.length - 1].key);
     const d = new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1);
     cells.push({ key: toDateKey(d), inMonth: false });

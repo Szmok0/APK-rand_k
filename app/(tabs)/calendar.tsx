@@ -60,6 +60,7 @@ export default function CalendarScreen() {
 
       <View style={styles.grid}>
         <MonthCalendar
+          useGridImage
           onSelectDay={setSelectedDate}
           renderCell={(dateKey, inMonth) => (
             <CalendarDayCell
@@ -80,25 +81,27 @@ export default function CalendarScreen() {
             style={styles.ticketImg}
           />
 
-          <Ionicons name="attach" size={18} color={colors.textOnPaper} style={styles.ticketPaperclip} />
-
-          <View style={styles.ticketDateCol}>
+          {/* The real ticket asset already bakes in "CASE FILE #", "DAILY
+              LOG" and a "RECORDED" stamp — code only fills the 4 real blank
+              slots: month/day-number/weekday and the file number. The
+              RECORDED stamp is baked unconditionally, so an opaque patch
+              covers it on days with no activity (never claim a day was
+              recorded when it wasn't). */}
+          <View style={styles.ticketMonthSlot}>
             <Text style={styles.ticketMonth}>{MONTH_ABBR[selectedDay.getMonth()]}</Text>
+          </View>
+          <View style={styles.ticketDaySlot}>
             <Text style={styles.ticketDayNumber}>{selectedDay.getDate()}</Text>
+          </View>
+          <View style={styles.ticketWeekdaySlot}>
             <Text style={styles.ticketWeekday}>{dayLabelFull(selectedDate)}</Text>
           </View>
-
-          <View style={styles.ticketFileCol}>
-            <Text style={styles.ticketTitle}>
-              CASE FILE #{selectedDay.getDate().toString().padStart(3, '0')}
+          <View style={styles.ticketFileNumSlot}>
+            <Text style={styles.ticketFileNum}>
+              {selectedDay.getDate().toString().padStart(3, '0')}
             </Text>
-            <Text style={styles.ticketSub}>DAILY LOG</Text>
-            {hasActivity && (
-              <View style={styles.recordedStamp}>
-                <Text style={styles.recordedText}>RECORDED</Text>
-              </View>
-            )}
           </View>
+          {!hasActivity && <View style={styles.recordedCover} />}
         </View>
       </View>
 
@@ -133,36 +136,50 @@ const styles = StyleSheet.create({
   grid: {
     paddingHorizontal: spacing.md,
   },
-  // ticket_blank.png is the real "case file" ticket asset (torn paper +
-  // pocket + paperclip cutout, from the asset pack), inpainted clean of the
-  // sample text it originally shipped with. Container aspectRatio matches
-  // the asset's exact pixel ratio (407x144) so overlaid text always lands
-  // on the right pocket regardless of screen width — same rule as Home.
+  // ticket_blank.png is the real "case file" ticket asset from the pack
+  // (torn paper + pocket + paperclip + "CASE FILE #" / "DAILY LOG" /
+  // "RECORDED" all baked in), inpainted clean of the red placeholder boxes
+  // it shipped with — those were "put data here" annotations, not real UI
+  // (same call as Home's dashed boxes). Container aspectRatio matches the
+  // asset's exact pixel ratio so every slot below always lands in its real
+  // blank spot regardless of screen width.
   ticketOuter: {
     marginHorizontal: spacing.lg,
     marginTop: spacing.md,
   },
   ticketImgWrap: {
     width: '100%',
-    aspectRatio: 407 / 144,
+    aspectRatio: 1189 / 385,
     position: 'relative',
   },
   ticketImg: {
     width: '100%',
     height: '100%',
   },
-  ticketPaperclip: {
+  ticketMonthSlot: {
     position: 'absolute',
-    top: -8,
-    left: '10%',
-    transform: [{ rotate: '-14deg' }],
+    left: '11%',
+    top: '10%',
+    width: '16%',
+    height: '22%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  ticketDateCol: {
+  ticketDaySlot: {
     position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: '37%',
+    left: '11%',
+    top: '32%',
+    width: '16%',
+    height: '31%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ticketWeekdaySlot: {
+    position: 'absolute',
+    left: '11%',
+    top: '63%',
+    width: '16%',
+    height: '29%',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -176,8 +193,8 @@ const styles = StyleSheet.create({
   ticketDayNumber: {
     ...typography.title,
     color: colors.textOnPaper,
-    fontSize: 30,
-    lineHeight: 34,
+    fontSize: 28,
+    lineHeight: 32,
   },
   ticketWeekday: {
     color: colors.textOnPaper,
@@ -185,43 +202,30 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     opacity: 0.7,
   },
-  ticketFileCol: {
+  ticketFileNumSlot: {
     position: 'absolute',
-    left: '40%',
-    right: 0,
-    top: 0,
-    bottom: 0,
+    left: '81%',
+    top: '23%',
+    width: '16%',
+    height: '18%',
+    alignItems: 'flex-start',
     justifyContent: 'center',
-    paddingLeft: spacing.sm,
   },
-  ticketTitle: {
+  ticketFileNum: {
     color: colors.textOnPaper,
-    fontSize: 14,
+    fontSize: 20,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
-  ticketSub: {
-    color: colors.textOnPaper,
-    fontSize: 10,
-    opacity: 0.7,
-    marginTop: 2,
-  },
-  recordedStamp: {
+  // Covers the baked-in "RECORDED" stamp on days with no activity — its
+  // position was measured directly off the asset's pixels.
+  recordedCover: {
     position: 'absolute',
-    right: spacing.sm,
-    bottom: spacing.md,
-    borderWidth: 1.5,
-    borderColor: colors.red,
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    transform: [{ rotate: '-4deg' }],
-  },
-  recordedText: {
-    color: colors.red,
-    fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 1,
+    left: '71%',
+    top: '47.5%',
+    width: '27%',
+    height: '43%',
+    backgroundColor: colors.paper,
   },
   panel: {
     flex: 1,

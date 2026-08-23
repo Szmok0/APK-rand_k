@@ -5,7 +5,11 @@ import { GLYPH_MAP } from '@/data/glyphs';
 import { colors, moodColors } from '@/theme/tokens';
 import type { Activity } from '@/types/models';
 
-const DAY_MARKER = require('../../assets/noir/calendar/day_marker.jpg');
+// Real asset from the pack: the "selected day" marker card (dark leather
+// tile, gold frame, star badge baked into its own top-right corner). Shown
+// once, full-cell, behind the selected day only — not per-cell, and not
+// combined with a second code-drawn star (it already has one).
+const DAY_MARKER = require('../../assets/noir/calendar/day_marker.png');
 
 type Props = {
   dayNumber: number;
@@ -27,17 +31,15 @@ export function CalendarDayCell({ dayNumber, inMonth, isToday, isSelected, activ
     : [];
 
   return (
-    <View style={[styles.wrap, isSelected && styles.wrapSelected]}>
-      {isToday && (
-        <View style={styles.todayBadge}>
-          <Image source={DAY_MARKER} style={styles.todayBadgeImage} />
-        </View>
-      )}
+    <View style={styles.wrap}>
+      {isSelected && <Image source={DAY_MARKER} style={styles.selectedMarker} />}
+      {isToday && !isSelected && <View style={styles.todayDot} />}
       <Text
         style={[
           styles.dayNumber,
           !inMonth && styles.dayNumberFaint,
           isToday && styles.dayNumberToday,
+          isSelected && styles.dayNumberSelected,
         ]}
       >
         {dayNumber}
@@ -60,12 +62,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
     height: '100%',
-    borderRadius: 8,
   },
-  wrapSelected: {
-    borderWidth: 1.5,
-    borderColor: colors.gold,
-    borderRadius: 10,
+  selectedMarker: {
+    position: 'absolute',
+    width: '86%',
+    height: '86%',
+    borderRadius: 6,
   },
   dayNumber: {
     fontSize: 13,
@@ -78,15 +80,18 @@ const styles = StyleSheet.create({
     color: colors.gold,
     fontWeight: '700',
   },
-  todayBadge: {
-    position: 'absolute',
-    top: 2,
-    right: 3,
+  dayNumberSelected: {
+    color: colors.textPrimary,
+    fontWeight: '700',
   },
-  todayBadgeImage: {
-    width: 14,
-    height: 14,
-    borderRadius: 2,
+  todayDot: {
+    position: 'absolute',
+    top: 3,
+    right: 5,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: colors.gold,
   },
   indicatorRow: {
     flexDirection: 'row',
