@@ -1,16 +1,24 @@
 // "Case Day" content — shared between the inline Calendar preview panel and the
 // full-screen day/[date] route. Not a separate navigational concept, just one
 // component embedded in two places (CALENDAR_TECH_SPEC section "Selected-day area").
+//
+// `fillReport` switches to the Calendar screen's compact scheme (product
+// owner spec, Aug 2026): bordered-square badge icons (not the asset-pack
+// tiles), code-drawn TIME/EVIDENCE boxes side by side, and a REPORT card
+// that fills all remaining space down to the tab bar with its own internal
+// scroll — no glyph list, priority badge or photo (no room left once REPORT
+// takes the rest). The full-screen day/[date] route keeps the richer,
+// non-`fillReport` layout with all of that detail.
 
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { GLYPH_MAP } from '@/data/glyphs';
 import { GlyphIcon } from '@/components/GlyphIcon';
 import { GoldButton, OutlineButton } from '@/components/ui';
-import { DAY_BADGE_COLORS, DAY_BADGE_IMAGES, dayBadges } from '@/engine/dayBadges';
+import { DAY_BADGE_COLORS, DAY_BADGE_ICON_NAMES, DAY_BADGE_IMAGES, dayBadges } from '@/engine/dayBadges';
 import * as Sharing from 'expo-sharing';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, priorityColors, priorityLabels, radius, spacing, typography } from '@/theme/tokens';
@@ -18,9 +26,10 @@ import { durationHours } from '@/utils/dates';
 
 type Props = {
   date: string;
+  fillReport?: boolean;
 };
 
-export function DayDetailPanel({ date }: Props) {
+export function DayDetailPanel({ date, fillReport }: Props) {
   const { getActivityByDate, deleteActivity } = useRelationship();
   const [noteRevealed, setNoteRevealed] = useState(false);
 
@@ -64,6 +73,84 @@ export function DayDetailPanel({ date }: Props) {
   }
 
   const badges = dayBadges(activity);
+  const timeValue = hours > 0 ? `${activity.startTime} – ${activity.endTime}` : '—';
+  const evidenceValue = `${activity.glyphIds.length} ${activity.glyphIds.length === 1 ? 'ITEM' : 'ITEMS'}`;
+
+  const reportBody = activity.note ? (
+    noteRevealed ? (
+      <Text style={styles.noteText}>{activity.note}</Text>
+    ) : (
+      <OutlineButton label="Reveal Report" onPress={() => setNoteRevealed(true)} />
+    )
+  ) : (
+    <Text style={styles.noNote}>No written statement attached.</Text>
+  );
+
+  if (fillReport) {
+    return (
+      <View style={styles.fillRoot}>
+        {badges.length > 0 && (
+          <View style={styles.badgeRowCode}>
+            {badges.map((key) => (
+              <View key={key} style={styles.badgeItemCode}>
+                <View style={[styles.badgeBox, { borderColor: DAY_BADGE_COLORS[key] }]}>
+                  <Ionicons name={DAY_BADGE_ICON_NAMES[key]} size={22} color={DAY_BADGE_COLORS[key]} />
+                </View>
+                <Text style={[styles.badgeLabelCode, { color: DAY_BADGE_COLORS[key] }]}>{key}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <View style={styles.readoutRowCode}>
+          <View style={styles.readoutBoxCode}>
+            <View style={styles.readoutHeaderRow}>
+              <Ionicons name="time-outline" size={14} color={colors.gold} />
+              <Text style={styles.readoutBoxLabel}>TIME</Text>
+            </View>
+            <Text style={styles.readoutBoxValue} numberOfLines={1}>
+              {timeValue}
+            </Text>
+          </View>
+          <View style={styles.readoutBoxCode}>
+            <View style={styles.readoutHeaderRow}>
+              <Ionicons name="folder-outline" size={14} color={colors.gold} />
+              <Text style={styles.readoutBoxLabel}>EVIDENCE</Text>
+            </View>
+            <Text style={styles.readoutBoxValue}>{evidenceValue}</Text>
+          </View>
+        </View>
+
+        <View style={styles.reportCardFill}>
+          <View style={styles.reportHeaderRowFill}>
+            <Text style={styles.reportLabelFill}>REPORT</Text>
+            <View style={styles.reportActionsInline}>
+              <Pressable
+                onPress={() => router.push({ pathname: '/add-activity', params: { date } })}
+                hitSlop={8}
+              >
+                <Ionicons name="pencil-outline" size={16} color={colors.textSecondary} />
+              </Pressable>
+              <Pressable onPress={handleDelete} hitSlop={8}>
+                <Ionicons name="trash-outline" size={16} color={colors.textSecondary} />
+              </Pressable>
+              <Pressable onPress={handleShare} hitSlop={8}>
+                <Ionicons name="share-outline" size={16} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+          </View>
+          <ScrollView style={styles.reportScroll} contentContainerStyle={styles.reportScrollContent}>
+            {reportBody}
+          </ScrollView>
+          <Image
+            source={require('../../assets/noir/calendar/tape_piece.png')}
+            style={styles.reportTape}
+            resizeMode="contain"
+          />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View>
@@ -82,7 +169,7 @@ export function DayDetailPanel({ date }: Props) {
         <View style={styles.timeFrameWrap}>
           <Image source={require('../../assets/noir/calendar/frame_time.png')} style={styles.readoutFrameImg} />
           <View style={styles.timeValueSlot}>
-            <Text style={styles.readoutValueText} numberOfLines={1} adjustsFontSizeToFit>
+            <Text style={styles.readoutValueText} numberOfLines={1}>
               {hours > 0 ? `${activity.startTime}–${activity.endTime}` : '—'}
             </Text>
           </View>
@@ -117,15 +204,7 @@ export function DayDetailPanel({ date }: Props) {
 
       <View style={styles.reportCard}>
         <Text style={styles.reportLabel}>REPORT</Text>
-        {activity.note ? (
-          noteRevealed ? (
-            <Text style={styles.noteText}>{activity.note}</Text>
-          ) : (
-            <OutlineButton label="Reveal Report" onPress={() => setNoteRevealed(true)} />
-          )
-        ) : (
-          <Text style={styles.noNote}>No written statement attached.</Text>
-        )}
+        {reportBody}
         <Image
           source={require('../../assets/noir/calendar/tape_piece.png')}
           style={styles.reportTape}
@@ -165,6 +244,103 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
   },
+  // --- fillReport (Calendar screen) styles ---
+  fillRoot: {
+    flex: 1,
+    minHeight: 0,
+  },
+  badgeRowCode: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  badgeItemCode: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  badgeBox: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+  },
+  badgeLabelCode: {
+    ...typography.caption,
+    fontSize: 8,
+    letterSpacing: 0.5,
+    marginTop: 3,
+    textAlign: 'center',
+  },
+  readoutRowCode: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  readoutBoxCode: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.md,
+    padding: spacing.xs,
+  },
+  readoutHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  readoutBoxLabel: {
+    ...typography.caption,
+    color: colors.textFaint,
+    fontSize: 10,
+    letterSpacing: 1,
+  },
+  readoutBoxValue: {
+    color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 3,
+  },
+  reportCardFill: {
+    flex: 1,
+    // minHeight: 0 lets this actually shrink to the space left over instead
+    // of overflowing past it (the standard flex-item-with-scrollable-child
+    // pitfall) — without it the card (and the tab bar under it) could get
+    // pushed past the screen bottom when the grid+ticket above are tall.
+    minHeight: 0,
+    marginTop: spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    padding: spacing.sm,
+    position: 'relative',
+  },
+  reportHeaderRowFill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
+  reportLabelFill: {
+    ...typography.stamp,
+    color: colors.gold,
+    fontSize: 11,
+    letterSpacing: 1.5,
+  },
+  reportActionsInline: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  reportScroll: {
+    flex: 1,
+  },
+  reportScrollContent: {
+    paddingBottom: spacing.md,
+  },
+  // --- shared / non-fillReport (day/[date] route) styles ---
   badgeRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -185,12 +361,6 @@ const styles = StyleSheet.create({
     marginTop: 3,
     textAlign: 'center',
   },
-  // TIME / EVIDENCE are the real steampunk-frame assets from the pack, side
-  // by side per the product owner's asset-sheet layout — sized down (flex:1
-  // each) so they don't crowd out the note field below. REPORT dropped the
-  // matching frame asset entirely: a fixed-aspect image can't grow with a
-  // variable-length note, so it's a plain code-drawn card instead (see
-  // reportCard below), sized to its content like any other View.
   readoutRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

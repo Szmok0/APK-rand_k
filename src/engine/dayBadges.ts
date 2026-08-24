@@ -7,6 +7,8 @@
 // glance" summary, computed fresh from glyphIds/importance every time,
 // never stored.
 
+import { Ionicons } from '@expo/vector-icons';
+
 import { GLYPH_MAP } from '@/data/glyphs';
 import { colors, moodColors } from '@/theme/tokens';
 import type { Activity } from '@/types/models';
@@ -27,6 +29,17 @@ export const DAY_BADGE_IMAGES: Record<DayBadgeKey, any> = {
   DM: require('../../assets/noir/calendar/badge_dm.jpg'),
   GIFT: require('../../assets/noir/calendar/badge_gift.jpg'),
   INCIDENT: require('../../assets/noir/calendar/badge_incident.jpg'),
+};
+
+// Simple line-icon names, used for the bordered-square badge style (Calendar
+// screen's compact inline panel) — plain Ionicons in a code-drawn frame,
+// not the ornate asset-pack tiles above (used by the full-screen day view).
+export const DAY_BADGE_ICON_NAMES: Record<DayBadgeKey, keyof typeof Ionicons.glyphMap> = {
+  MEETING: 'people-outline',
+  CALL: 'call-outline',
+  DM: 'chatbubble-outline',
+  GIFT: 'gift-outline',
+  INCIDENT: 'star-outline',
 };
 
 const CALL_IDS = new Set(['phone', 'video_call']);

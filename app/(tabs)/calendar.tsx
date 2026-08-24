@@ -7,7 +7,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -105,9 +105,9 @@ export default function CalendarScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.panel} contentContainerStyle={styles.panelContent}>
-        <DayDetailPanel date={selectedDate} />
-      </ScrollView>
+      <View style={[styles.panel, styles.panelContent]}>
+        <DayDetailPanel date={selectedDate} fillReport />
+      </View>
     </Screen>
   );
 }
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.xs,
   },
   headerTitle: {
     ...typography.title,
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   // blank spot regardless of screen width.
   ticketOuter: {
     marginHorizontal: spacing.lg,
-    marginTop: spacing.md,
+    marginTop: spacing.xs,
   },
   ticketImgWrap: {
     width: '100%',
@@ -227,12 +227,17 @@ const styles = StyleSheet.create({
     height: '43%',
     backgroundColor: colors.paper,
   },
+  // overflow:'hidden' is a safety net: if the grid+ticket above ever leave
+  // less room than the panel below needs, this clips at the boundary
+  // instead of the panel's content visually drawing over the tab bar.
   panel: {
     flex: 1,
+    minHeight: 0,
+    overflow: 'hidden',
   },
   panelContent: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xs,
   },
 });
