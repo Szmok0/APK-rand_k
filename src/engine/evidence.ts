@@ -31,6 +31,7 @@ export function buildEvidenceArchive(activities: Activity[]): Exhibit[] {
     note: a.note,
     photoUri: a.photoUri,
     importance: a.importance,
+    favorite: a.favorite,
   }));
 }
 

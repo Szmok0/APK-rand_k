@@ -54,6 +54,7 @@ type RelationshipContextValue = {
   getActivityByDate: (date: string) => Activity | undefined;
   upsertActivity: (input: UpsertActivityInput) => Activity;
   deleteActivity: (id: string) => void;
+  toggleFavorite: (id: string) => void;
   startNewStory: () => Promise<void>;
   exportCurrent: () => ExportFile;
   importRelationship: (file: ExportFile) => Promise<void>;
@@ -148,6 +149,20 @@ export function RelationshipProvider({ children }: { children: React.ReactNode }
     [relationship, persistRelationship]
   );
 
+  // Evidence Archive's "star" toggle — a real, persisted per-Activity flag
+  // (not a screen-local UI-only state), same upsert-by-id pattern as deleteActivity.
+  const toggleFavorite = useCallback(
+    (id: string) => {
+      void persistRelationship({
+        ...relationship,
+        activities: relationship.activities.map((a) =>
+          a.id === id ? { ...a, favorite: !a.favorite } : a
+        ),
+      });
+    },
+    [relationship, persistRelationship]
+  );
+
   const exportCurrent = useCallback((): ExportFile => {
     return {
       schema: 'zuz-diary/relationship',
@@ -192,6 +207,7 @@ export function RelationshipProvider({ children }: { children: React.ReactNode }
       getActivityByDate,
       upsertActivity,
       deleteActivity,
+      toggleFavorite,
       startNewStory,
       exportCurrent,
       importRelationship,
@@ -205,6 +221,7 @@ export function RelationshipProvider({ children }: { children: React.ReactNode }
       getActivityByDate,
       upsertActivity,
       deleteActivity,
+      toggleFavorite,
       startNewStory,
       exportCurrent,
       importRelationship,

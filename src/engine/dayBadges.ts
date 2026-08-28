@@ -45,7 +45,10 @@ export const DAY_BADGE_ICON_NAMES: Record<DayBadgeKey, keyof typeof Ionicons.gly
 const CALL_IDS = new Set(['phone', 'video_call']);
 const DM_IDS = new Set(['message', 'first_message', 'reconnect']);
 
-export function dayBadges(activity: Activity): DayBadgeKey[] {
+// Only glyphIds/importance are read — accepts Activity or any derived shape
+// that carries the same two fields (e.g. Exhibit, Evidence Archive's derived
+// view over Activity).
+export function dayBadges(activity: Pick<Activity, 'glyphIds' | 'importance'>): DayBadgeKey[] {
   const keys = new Set<DayBadgeKey>();
   for (const id of activity.glyphIds) {
     const glyph = GLYPH_MAP[id];

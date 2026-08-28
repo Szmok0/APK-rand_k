@@ -26,6 +26,7 @@ export type Activity = {
   note?: string;
   importance: 0 | 1 | 2; // CASE PRIORITY: 0 routine, 1 noted, 2 critical
   photoUri?: string;
+  favorite?: boolean; // Evidence Archive "starred" flag — real, persisted field
   createdAt: string;
   updatedAt: string;
 };
@@ -58,6 +59,7 @@ export type Exhibit = {
   note?: string;
   photoUri?: string;
   importance: 0 | 1 | 2;
+  favorite?: boolean;
 };
 
 // Archive — closed-case file (same schema as export, section below).
