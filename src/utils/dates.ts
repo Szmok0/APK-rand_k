@@ -88,6 +88,12 @@ export function dateLabelUpper(key: string): string {
   return `${MONTH_NAMES[d.getMonth()].slice(0, 3).toUpperCase()} ${d.getDate()}`;
 }
 
+// 'May 26, 2025' style — used on Add Activity's INCIDENT DATE field.
+export function dateLabelFull(key: string): string {
+  const d = fromDateKey(key);
+  return `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
 // Zwraca siatkę dni miesiąca (poniedziałek-start), z dniami z sąsiednich miesięcy
 // wypełniającymi pierwszy/ostatni tydzień — jak w mockupie kalendarza.
 export function monthGrid(year: number, month: number): { key: string; inMonth: boolean }[] {
