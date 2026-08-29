@@ -41,6 +41,12 @@ type SummaryItem = {
 const CALL_IDS = new Set(['phone', 'video_call']);
 const MESSAGE_IDS = new Set(['message', 'first_message', 'reconnect']);
 
+// One consistent vertical gap between every section on this screen (quote,
+// date badge, summary row, photo/priority, TIME, EVIDENCE, REPORT, actions)
+// — product owner spec: "wszystkie ramki powinny być dokładnie w tej samej
+// odległości" (every frame at exactly the same distance from the next).
+const SECTION_GAP = 10;
+
 export default function DayDetailScreen() {
   const { date } = useLocalSearchParams<{ date: string }>();
   const { getActivityByDate, deleteActivity, toggleFavorite } = useRelationship();
@@ -339,7 +345,7 @@ const styles = StyleSheet.create({
   },
   quoteBox: {
     alignSelf: 'center',
-    marginTop: spacing.lg,
+    marginTop: SECTION_GAP,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
@@ -367,7 +373,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '70%',
     aspectRatio: 1661 / 707,
-    marginTop: spacing.lg,
+    marginTop: SECTION_GAP,
     position: 'relative',
   },
   dateBadgeImg: {
@@ -434,7 +440,7 @@ const styles = StyleSheet.create({
   summaryRow: {
     flexDirection: 'row',
     gap: 5,
-    marginTop: spacing.lg,
+    marginTop: SECTION_GAP,
   },
   summaryCard: {
     flex: 1,
@@ -469,24 +475,25 @@ const styles = StyleSheet.create({
   },
   photoPriorityRow: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
     gap: spacing.sm,
-    marginTop: spacing.lg,
+    marginTop: SECTION_GAP,
   },
-  // Photo and priority sit side by side at the same aspect ratio (the
-  // priority card's real 1269x1043 shape) so the pair lines up evenly even
-  // though the photo frame asset's own native crop is wider — it's a plain
-  // torn-corner border, not pixel-exact art that has to keep its ratio.
+  // Photo and priority each keep their own real asset's native aspect ratio
+  // (they aren't the same shape — the photo frame is a wide vintage-print
+  // border, the priority card is a taller lined-paper note — forcing them
+  // to match distorted the photo frame's border into something unrecognizable).
   photoFrameWrap: {
     width: '48%',
-    aspectRatio: 1269 / 1043,
+    aspectRatio: 1389 / 822,
     position: 'relative',
   },
   photoInner: {
     position: 'absolute',
-    left: '5%',
-    top: '8.5%',
-    width: '90.7%',
-    height: '82.7%',
+    left: '4%',
+    top: '5%',
+    width: '92%',
+    height: '87%',
     borderRadius: 2,
   },
   photoFrameArt: {
@@ -516,11 +523,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   // TIME / EVIDENCE — real asset bars (icon + label baked into the pixels),
-  // only the value is code, dropped into the dashed placeholder's exact spot.
+  // only the value is code, dropped into the dashed placeholder's exact
+  // spot. Both bars are forced to the SAME size (product owner spec: "takiej
+  // samej wielkości") and a slimmer aspect ratio than either asset's native
+  // crop, so the bar height matches its one line of text instead of leaving
+  // a lot of empty vertical padding — they're plain bordered bars, not
+  // pixel-exact art, so stretching them a bit doesn't cost anything.
   timeBarWrap: {
-    marginTop: spacing.md,
+    marginTop: SECTION_GAP,
     width: '100%',
-    aspectRatio: 239 / 68,
+    aspectRatio: 5.2,
     position: 'relative',
   },
   timeBarImg: {
@@ -537,9 +549,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   evidenceBarWrap: {
-    marginTop: 3,
+    marginTop: SECTION_GAP,
     width: '100%',
-    aspectRatio: 268 / 70,
+    aspectRatio: 5.2,
     position: 'relative',
   },
   evidenceBarImg: {
@@ -564,7 +576,7 @@ const styles = StyleSheet.create({
   // outline favorite star are all baked into report_card.png); only the
   // note text and the star's filled state are code.
   reportCardWrap: {
-    marginTop: spacing.lg,
+    marginTop: SECTION_GAP,
     width: '100%',
     aspectRatio: 532 / 212,
     position: 'relative',
@@ -620,7 +632,7 @@ const styles = StyleSheet.create({
   // ACTIONS — single real asset for all three buttons; EDIT/DELETE/SHARE are
   // invisible equal-thirds Pressables laid on top of it.
   actionsRowWrap: {
-    marginTop: spacing.lg,
+    marginTop: SECTION_GAP,
     width: '100%',
     aspectRatio: 502 / 60,
     position: 'relative',
