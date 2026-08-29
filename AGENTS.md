@@ -28,6 +28,12 @@ Authoritative specs, in order of how concrete/binding they are:
    parameters, weights TBD); THE LID is slider-based (1-5), not a quiz;
    THE LID PREVIEW needs per-archetype illustration assets that don't exist
    yet. See section 14 of that doc for what's still open.
+2c. `docs/ZUZA_DIARY_THE_LID_PREVIEW_LOGIC.md` — approved, fully concrete
+   implementation spec for THE LID PREVIEW, superseding 2b's "still open"
+   note on scoring: exact archetype weight tables, threat/confidence
+   formulas, contradiction rules and Easter Eggs are all specified and
+   implemented (`src/engine/lid/*`). Only the per-archetype illustration
+   assets remain genuinely open.
 3. `docs/ZUZA_DIARY_CLAUDE_CODE_TECHNICAL_MASTER_v2.md` — earlier, broader
    technical contract. Still useful background, but superseded wherever it
    conflicts with the two docs above (e.g. it originally described Evidence
@@ -66,10 +72,14 @@ Authoritative specs, in order of how concrete/binding they are:
   measurement. `app/profiler/lid.tsx` is the real THE LID screen — 9
   product-owner-specified sliders (`src/data/theLidTraits.ts`,
   `src/components/TheLidSlider.tsx`), each persisted the moment it's
-  released, no SAVE step. `app/profiler/lid-preview.tsx` is still an honest
-  placeholder — the archetype list/mapping/illustrations THE LID's "RUN THE
-  ANALYSIS" button leads to are explicitly still open design work
-  (`ZUZA_DIARY_PROFILER_KONCEPCJA.md` section 14), not invented here.
+  released, no SAVE step. `app/profiler/lid-preview.tsx` is the real THE
+  LID PREVIEW — a fully product-owner-specified, deterministic archetype/
+  threat/confidence classifier (`src/engine/lid/*`, `docs/
+  ZUZA_DIARY_THE_LID_PREVIEW_LOGIC.md`), still genuinely blocked on one
+  thing: only one archetype illustration was ever delivered (the
+  sunglasses portrait baked into `lid_preview_bg.jpg`), so the central
+  photo does not yet change per result — `src/engine/lid/lidAssets.ts`
+  documents exactly what's missing rather than inventing the other 7.
 - **4 bottom-nav tabs, no FAB**: HOME / CALENDAR / EVIDENCE / PROFILER.
   Comparative Analysis is intentionally not a tab yet (needs ≥2 real Profiler
   assessments to compare against).
