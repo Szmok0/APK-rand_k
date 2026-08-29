@@ -67,51 +67,57 @@ export default function DayDetailScreen() {
     }
   }
 
+  // Only categories that actually apply to this activity are shown — this is
+  // a derived read-out of what's in the data, not a fixed 6-slot template
+  // (an activity with no gift-type glyph shows no GIFT card, same logic as
+  // Calendar's dayBadges list). All shown items sit in a single row.
   const summary: SummaryItem[] = activity
-    ? [
-        {
-          key: 'MEETING',
-          label: 'MEETING',
-          icon: 'people-outline',
-          color: colors.olive,
-          count: activity.glyphIds.filter((id) => GLYPH_MAP[id]?.category === 'MEETINGS').length,
-        },
-        {
-          key: 'MESSAGE',
-          label: 'MESSAGE',
-          icon: 'chatbubble-outline',
-          color: colors.purple,
-          count: activity.glyphIds.filter((id) => MESSAGE_IDS.has(id)).length,
-        },
-        {
-          key: 'CALL',
-          label: 'CALL',
-          icon: 'call-outline',
-          color: colors.amber,
-          count: activity.glyphIds.filter((id) => CALL_IDS.has(id)).length,
-        },
-        {
-          key: 'GIFT',
-          label: 'GIFT',
-          icon: 'gift-outline',
-          color: moodColors.NAMIETNOSC,
-          count: activity.glyphIds.filter((id) => GLYPH_MAP[id]?.category === 'OBJECTS').length,
-        },
-        {
-          key: 'NOTE',
-          label: 'NOTE',
-          icon: 'document-text-outline',
-          color: colors.paper,
-          count: activity.note ? 1 : 0,
-        },
-        {
-          key: 'FAVORITE',
-          label: 'FAVORITE',
-          icon: 'star-outline',
-          color: colors.gold,
-          count: activity.favorite ? 1 : 0,
-        },
-      ]
+    ? (
+        [
+          {
+            key: 'MEETING',
+            label: 'MEETING',
+            icon: 'people-outline',
+            color: colors.olive,
+            count: activity.glyphIds.filter((id) => GLYPH_MAP[id]?.category === 'MEETINGS').length,
+          },
+          {
+            key: 'MESSAGE',
+            label: 'MESSAGE',
+            icon: 'chatbubble-outline',
+            color: colors.purple,
+            count: activity.glyphIds.filter((id) => MESSAGE_IDS.has(id)).length,
+          },
+          {
+            key: 'CALL',
+            label: 'CALL',
+            icon: 'call-outline',
+            color: colors.amber,
+            count: activity.glyphIds.filter((id) => CALL_IDS.has(id)).length,
+          },
+          {
+            key: 'GIFT',
+            label: 'GIFT',
+            icon: 'gift-outline',
+            color: moodColors.NAMIETNOSC,
+            count: activity.glyphIds.filter((id) => GLYPH_MAP[id]?.category === 'OBJECTS').length,
+          },
+          {
+            key: 'NOTE',
+            label: 'NOTE',
+            icon: 'document-text-outline',
+            color: colors.paper,
+            count: activity.note ? 1 : 0,
+          },
+          {
+            key: 'FAVORITE',
+            label: 'FAVORITE',
+            icon: 'star-outline',
+            color: colors.gold,
+            count: activity.favorite ? 1 : 0,
+          },
+        ] as SummaryItem[]
+      ).filter((s) => s.count > 0)
     : [];
 
   return (
@@ -149,8 +155,10 @@ export default function DayDetailScreen() {
             style={styles.dateBadgeImg}
             resizeMode="stretch"
           />
-          <View style={styles.dateBadgeSlot}>
+          <View style={styles.dateBadgeDateSlot}>
             <Text style={styles.dateBadgeDate}>{dateBadgeLabel(date)}</Text>
+          </View>
+          <View style={styles.dateBadgeWeekdaySlot}>
             <Text style={styles.dateBadgeWeekday}>{dayLabelFull(date)}</Text>
           </View>
         </View>
@@ -168,20 +176,22 @@ export default function DayDetailScreen() {
           </View>
         ) : (
           <>
-            <View style={styles.summaryRow}>
-              {summary.map((s) => (
-                <View key={s.key} style={styles.summaryCard}>
-                  <View style={styles.summaryIconWrap}>
-                    <Ionicons name={s.icon} size={18} color={s.color} />
-                    <View style={[styles.summaryDot, { backgroundColor: s.color }]} />
+            {summary.length > 0 && (
+              <View style={styles.summaryRow}>
+                {summary.map((s) => (
+                  <View key={s.key} style={styles.summaryCard}>
+                    <View style={styles.summaryIconWrap}>
+                      <Ionicons name={s.icon} size={14} color={s.color} />
+                      <View style={[styles.summaryDot, { backgroundColor: s.color }]} />
+                    </View>
+                    <Text style={styles.summaryValue}>{s.count}</Text>
+                    <Text style={styles.summaryLabel} numberOfLines={1}>
+                      {s.label}
+                    </Text>
                   </View>
-                  <Text style={styles.summaryValue}>{s.count}</Text>
-                  <Text style={styles.summaryLabel} numberOfLines={1}>
-                    {s.label}
-                  </Text>
-                </View>
-              ))}
-            </View>
+                ))}
+              </View>
+            )}
 
             {(activity.photoUri || activity.importance > 0) && (
               <View style={styles.photoPriorityRow}>
@@ -201,10 +211,10 @@ export default function DayDetailScreen() {
                       style={styles.priorityBadgeImg}
                       resizeMode="stretch"
                     />
-                    <View style={styles.priorityBadgeSlot}>
-                      <Text style={[styles.priorityWord, { color: priorityColors[activity.importance] }]}>
-                        PRIORITY
-                      </Text>
+                    {/* "PRIORITY" is baked into the asset as a stamp — only the
+                        level word (ROUTINE/NOTED/CRITICAL) is code, dropped
+                        into the dashed placeholder below it. */}
+                    <View style={styles.priorityLevelSlot}>
                       <Text style={[styles.priorityLevel, { color: priorityColors[activity.importance] }]}>
                         {priorityLabels[activity.importance]}
                       </Text>
@@ -328,6 +338,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   quoteBox: {
+    alignSelf: 'center',
     marginTop: spacing.lg,
     borderWidth: 1,
     borderColor: colors.border,
@@ -354,33 +365,44 @@ const styles = StyleSheet.create({
   },
   dateBadgeWrap: {
     alignSelf: 'center',
-    width: '58%',
-    aspectRatio: 198 / 89,
+    width: '70%',
+    aspectRatio: 1661 / 707,
     marginTop: spacing.lg,
+    position: 'relative',
   },
   dateBadgeImg: {
     width: '100%',
     height: '100%',
   },
-  dateBadgeSlot: {
+  // Two separate slots (date on top, weekday below), matching the two
+  // dashed placeholder regions actually drawn into date_badge.png.
+  dateBadgeDateSlot: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
+    left: '19.3%',
+    top: '11.3%',
+    width: '61.7%',
+    height: '31.1%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dateBadgeWeekdaySlot: {
+    position: 'absolute',
+    left: '16.9%',
+    top: '55.2%',
+    width: '66.5%',
+    height: '29.7%',
     alignItems: 'center',
     justifyContent: 'center',
   },
   dateBadgeDate: {
     ...typography.stamp,
     color: colors.textOnPaper,
-    fontSize: 15,
+    fontSize: 14,
   },
   dateBadgeWeekday: {
     ...typography.stamp,
     color: colors.red,
-    fontSize: 13,
-    marginTop: 2,
+    fontSize: 12,
   },
   empty: {
     alignItems: 'center',
@@ -407,21 +429,22 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
   },
+  // Always ONE row — however many categories apply (1 to 6), they share the
+  // row via flex:1 rather than wrapping to a second line.
   summaryRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
+    gap: 5,
     marginTop: spacing.lg,
   },
   summaryCard: {
-    width: '31%',
+    flex: 1,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
+    paddingVertical: 6,
     alignItems: 'center',
-    gap: 2,
+    gap: 1,
   },
   summaryIconWrap: {
     position: 'relative',
@@ -429,19 +452,19 @@ const styles = StyleSheet.create({
   summaryDot: {
     position: 'absolute',
     top: -2,
-    right: -6,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    right: -5,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
   summaryValue: {
     ...typography.stat,
     color: colors.textPrimary,
-    fontSize: 16,
+    fontSize: 13,
   },
   summaryLabel: {
-    fontSize: 8,
-    letterSpacing: 0.5,
+    fontSize: 6.5,
+    letterSpacing: 0.3,
     color: colors.textFaint,
   },
   photoPriorityRow: {
@@ -449,17 +472,21 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginTop: spacing.lg,
   },
+  // Photo and priority sit side by side at the same aspect ratio (the
+  // priority card's real 1269x1043 shape) so the pair lines up evenly even
+  // though the photo frame asset's own native crop is wider — it's a plain
+  // torn-corner border, not pixel-exact art that has to keep its ratio.
   photoFrameWrap: {
     width: '48%',
-    aspectRatio: 141 / 137,
+    aspectRatio: 1269 / 1043,
     position: 'relative',
   },
   photoInner: {
     position: 'absolute',
-    left: '9%',
-    top: '10%',
-    width: '82%',
-    height: '80%',
+    left: '5%',
+    top: '8.5%',
+    width: '90.7%',
+    height: '82.7%',
     borderRadius: 2,
   },
   photoFrameArt: {
@@ -468,35 +495,30 @@ const styles = StyleSheet.create({
   },
   priorityBadgeWrap: {
     width: '48%',
-    aspectRatio: 190 / 129,
+    aspectRatio: 1269 / 1043,
     position: 'relative',
   },
   priorityBadgeImg: {
     width: '100%',
     height: '100%',
   },
-  priorityBadgeSlot: {
+  priorityLevelSlot: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
+    left: '15.4%',
+    top: '48.4%',
+    width: '71.7%',
+    height: '33.1%',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  priorityWord: {
-    ...typography.stamp,
-    fontSize: 13,
-  },
   priorityLevel: {
     ...typography.stamp,
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 14,
   },
   // TIME / EVIDENCE — real asset bars (icon + label baked into the pixels),
   // only the value is code, dropped into the dashed placeholder's exact spot.
   timeBarWrap: {
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
     width: '100%',
     aspectRatio: 239 / 68,
     position: 'relative',
@@ -515,7 +537,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   evidenceBarWrap: {
-    marginTop: spacing.sm,
+    marginTop: 3,
     width: '100%',
     aspectRatio: 268 / 70,
     position: 'relative',
@@ -562,19 +584,20 @@ const styles = StyleSheet.create({
   },
   reportInner: {
     position: 'absolute',
-    left: '6.6%',
-    top: '21%',
-    width: '86.5%',
-    height: '67%',
+    left: '8%',
+    top: '23%',
+    width: '82%',
+    height: '62%',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   reportScroll: {
     flex: 1,
   },
   noteText: {
     color: colors.textOnPaper,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 16,
   },
   noNote: {
     color: colors.textOnPaper,
