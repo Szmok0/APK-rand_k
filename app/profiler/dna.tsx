@@ -227,17 +227,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     textAlignVertical: 'center',
   },
+  // Real-device report: both of these read as invisible against the paper
+  // texture — textOnPaper (#241D18, dark brown) apparently doesn't have
+  // enough contrast there in practice. Plain black + bold reads reliably;
+  // sized up from what shipped (systemComment +18%, fieldNote +20% — it was
+  // reported as "micro" on top of being unreadable).
   systemComment: {
     position: 'absolute',
-    color: colors.textOnPaper,
-    fontSize: 11,
-    lineHeight: 15,
+    color: '#000000',
+    fontWeight: '700',
+    fontSize: 13,
+    lineHeight: 18,
   },
   fieldNote: {
     position: 'absolute',
-    color: colors.textOnPaper,
-    fontSize: 10,
-    lineHeight: 13,
+    color: '#000000',
+    fontWeight: '700',
+    fontSize: 12,
+    lineHeight: 16,
     fontStyle: 'italic',
   },
 });

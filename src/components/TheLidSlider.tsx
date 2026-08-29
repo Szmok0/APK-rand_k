@@ -6,20 +6,34 @@
 // Never a native/platform slider (spec explicitly rules that out — it
 // wouldn't match the art).
 //
+// Built on core React Native's PanResponder, not
+// react-native-gesture-handler/Reanimated worklets — an earlier version
+// used GestureDetector + runOnJS and crashed on a real device the moment a
+// drag started (worked fine on web, where RNGH's gesture callbacks never
+// actually run as native-thread worklets, so web testing never caught it).
+// PanResponder has no native module of its own and no worklet boundary to
+// get wrong, at the cost of being a slightly more manual API.
+//
 // The parent (app/profiler/lid.tsx) sizes this component's container to
 // exactly span the baked track's dot-1-to-dot-5 width for the attribute it
 // represents; this component measures that real width via onLayout rather
 // than assuming any fixed px, so it works on any device size.
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Image, LayoutChangeEvent, StyleSheet, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { runOnJS } from 'react-native-reanimated';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { Image, LayoutChangeEvent, PanResponder, StyleSheet, View } from 'react-native';
 
 // Exact aspect ratio of assets/noir/profiler/lid_pointer.png (176x229).
 const POINTER_ASPECT = 176 / 229;
 const POINTER_WIDTH = 34;
 const POINTER_HEIGHT = POINTER_WIDTH / POINTER_ASPECT;
+
+// How many px of MORE horizontal than vertical movement this control needs
+// before it claims the touch, instead of letting it pass through to the
+// outer vertical ScrollView (this screen has 9 of these, taller than one
+// viewport). Kept small — real taps always jitter a couple of px — so a
+// plain tap-to-jump still registers in practice, while an intentional
+// vertical scroll starting on a slider row isn't swallowed by it.
+const CLAIM_THRESHOLD = 2;
 
 type LidValue = 1 | 2 | 3 | 4 | 5;
 
@@ -43,62 +57,62 @@ type Props = {
 
 export function TheLidSlider({ value, onChange, onChangeEnd }: Props) {
   const [width, setWidth] = useState(0);
+  // PanResponder's callbacks are created once (inside useMemo, see below)
+  // and closed over by reference — a ref keeps them reading the CURRENT
+  // width/callbacks instead of whatever was current the one time the
+  // responder was built.
+  const widthRef = useRef(0);
+  const onChangeRef = useRef(onChange);
+  const onChangeEndRef = useRef(onChangeEnd);
+  widthRef.current = width;
+  onChangeRef.current = onChange;
+  onChangeEndRef.current = onChangeEnd;
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     setWidth(e.nativeEvent.layout.width);
   }, []);
 
-  // Keep a live ref to the latest width/callbacks so the memoized Gesture
-  // below never closes over stale values without needing to be rebuilt on
-  // every render (rebuilding it on every value/width change is fine here
-  // since both change rarely, but this keeps the dependency list honest).
-  const preview = useCallback((v: LidValue) => onChange(v), [onChange]);
-  const commit = useCallback((v: LidValue) => onChangeEnd(v), [onChangeEnd]);
-
-  const pan = useMemo(
+  const panResponder = useMemo(
     () =>
-      Gesture.Pan()
-        .hitSlop({ left: 20, right: 20, top: 18, bottom: 18 })
-        // This control lives inside a vertical ScrollView (the screen has 9
-        // of these, taller than one viewport). Without these two, ANY touch
-        // that starts on a slider — including someone just trying to scroll
-        // past it — gets captured as a horizontal pan. A tiny activeOffsetX
-        // (real taps always jitter past ~2px) still lets a plain tap-to-jump
-        // register, while failOffsetY releases the touch back to the
-        // ScrollView the moment it moves vertically first.
-        .activeOffsetX([-2, 2])
-        .failOffsetY([-12, 12])
-        // onStart (not onBegin) on purpose: onBegin fires on every touch-down
-        // before it's known whether this is a horizontal drag or a vertical
-        // scroll passing through — jumping the pointer there would move the
-        // slider on a touch that turns out to just be scrolling. onStart only
-        // fires once activeOffsetX has confirmed real horizontal intent.
-        .onStart((e) => {
-          runOnJS(preview)(valueFromX(e.x, width));
-        })
-        .onUpdate((e) => {
-          runOnJS(preview)(valueFromX(e.x, width));
-        })
-        .onEnd((e) => {
-          runOnJS(commit)(valueFromX(e.x, width));
-        }),
-    [width, preview, commit]
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onStartShouldSetPanResponderCapture: () => false,
+        // Claim the touch only once it's moved clearly more horizontally
+        // than vertically — a vertical scroll starting on a slider row
+        // passes straight through to the ScrollView instead of getting
+        // stuck here.
+        onMoveShouldSetPanResponder: (_evt, gesture) =>
+          Math.abs(gesture.dx) > CLAIM_THRESHOLD && Math.abs(gesture.dx) > Math.abs(gesture.dy),
+        onMoveShouldSetPanResponderCapture: (_evt, gesture) =>
+          Math.abs(gesture.dx) > CLAIM_THRESHOLD && Math.abs(gesture.dx) > Math.abs(gesture.dy),
+        onPanResponderGrant: (evt) => {
+          onChangeRef.current(valueFromX(evt.nativeEvent.locationX, widthRef.current));
+        },
+        onPanResponderMove: (evt) => {
+          onChangeRef.current(valueFromX(evt.nativeEvent.locationX, widthRef.current));
+        },
+        onPanResponderRelease: (evt) => {
+          onChangeEndRef.current(valueFromX(evt.nativeEvent.locationX, widthRef.current));
+        },
+        onPanResponderTerminate: (evt) => {
+          onChangeEndRef.current(valueFromX(evt.nativeEvent.locationX, widthRef.current));
+        },
+      }),
+    []
   );
 
   const pointerCenterX = width > 0 ? ((value - 1) / 4) * width : 0;
 
   return (
-    <GestureDetector gesture={pan}>
-      <View style={styles.hitArea} onLayout={onLayout}>
-        {width > 0 && (
-          <Image
-            source={require('../../assets/noir/profiler/lid_pointer.png')}
-            style={[styles.pointer, { left: pointerCenterX - POINTER_WIDTH / 2 }]}
-            resizeMode="contain"
-          />
-        )}
-      </View>
-    </GestureDetector>
+    <View style={styles.hitArea} onLayout={onLayout} {...panResponder.panHandlers}>
+      {width > 0 && (
+        <Image
+          source={require('../../assets/noir/profiler/lid_pointer.png')}
+          style={[styles.pointer, { left: pointerCenterX - POINTER_WIDTH / 2 }]}
+          resizeMode="contain"
+        />
+      )}
+    </View>
   );
 }
 
