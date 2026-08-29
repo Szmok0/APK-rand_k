@@ -214,40 +214,48 @@ export default function DayDetailScreen() {
               </View>
             )}
 
-            <View style={styles.readoutBar}>
-              <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
-              <Text style={styles.readoutLabel}>TIME</Text>
-              <Text style={styles.readoutValue}>
-                {durationHours(activity.startTime, activity.endTime) > 0
-                  ? `${activity.startTime} - ${activity.endTime}`
-                  : '—'}
-              </Text>
+            <View style={styles.timeBarWrap}>
+              <Image
+                source={require('../../assets/noir/day-detail/time_bar.png')}
+                style={styles.timeBarImg}
+                resizeMode="stretch"
+              />
+              <View style={styles.timeBarSlot}>
+                <Text style={styles.readoutValue} numberOfLines={1}>
+                  {durationHours(activity.startTime, activity.endTime) > 0
+                    ? `${activity.startTime} - ${activity.endTime}`
+                    : '—'}
+                </Text>
+              </View>
             </View>
-            <View style={styles.readoutBar}>
-              <Ionicons name="folder-outline" size={16} color={colors.textSecondary} />
-              <Text style={styles.readoutLabel}>EVIDENCE</Text>
-              <Text style={styles.readoutValue}>
-                {String(activity.glyphIds.length).padStart(3, '0')} ITEMS
-              </Text>
+            <View style={styles.evidenceBarWrap}>
+              <Image
+                source={require('../../assets/noir/day-detail/evidence_bar.png')}
+                style={styles.evidenceBarImg}
+                resizeMode="stretch"
+              />
+              <View style={styles.evidenceBarSlot}>
+                <Text style={styles.readoutValue} numberOfLines={1}>
+                  {String(activity.glyphIds.length).padStart(3, '0')}
+                </Text>
+              </View>
             </View>
 
-            <View style={styles.reportCard}>
-              <View style={styles.reportHeaderRow}>
-                <View style={styles.reportTab}>
-                  <Text style={styles.reportTabLabel}>REPORT</Text>
-                </View>
-                <Pressable hitSlop={10} onPress={() => toggleFavorite(activity.id)}>
-                  <Ionicons
-                    name={activity.favorite ? 'star' : 'star-outline'}
-                    size={18}
-                    color={activity.favorite ? colors.gold : colors.textFaint}
-                  />
-                </Pressable>
-              </View>
+            <View style={styles.reportCardWrap}>
+              <Image
+                source={require('../../assets/noir/day-detail/report_card.png')}
+                style={styles.reportCardImg}
+                resizeMode="stretch"
+              />
+              <Pressable style={styles.reportStarSlot} hitSlop={8} onPress={() => toggleFavorite(activity.id)}>
+                {activity.favorite && <Ionicons name="star" size={16} color={colors.gold} />}
+              </Pressable>
               <View style={styles.reportInner}>
                 {activity.note ? (
                   noteRevealed ? (
-                    <Text style={styles.noteText}>{activity.note}</Text>
+                    <ScrollView style={styles.reportScroll}>
+                      <Text style={styles.noteText}>{activity.note}</Text>
+                    </ScrollView>
                   ) : (
                     <Pressable style={styles.revealBtn} onPress={() => setNoteRevealed(true)}>
                       <Text style={styles.revealBtnLabel}>Reveal Report</Text>
@@ -257,29 +265,22 @@ export default function DayDetailScreen() {
                   <Text style={styles.noNote}>No written statement attached.</Text>
                 )}
               </View>
-              <Image
-                source={require('../../assets/noir/calendar/tape_piece.png')}
-                style={styles.reportTape}
-                resizeMode="contain"
-              />
             </View>
 
-            <View style={styles.actionsRow}>
-              <Pressable
-                style={styles.actionBtn}
-                onPress={() => router.push({ pathname: '/add-activity', params: { date } })}
-              >
-                <Ionicons name="pencil-outline" size={16} color={colors.textSecondary} />
-                <Text style={styles.actionLabel}>EDIT</Text>
-              </Pressable>
-              <Pressable style={[styles.actionBtn, styles.deleteBtn]} onPress={handleDelete}>
-                <Ionicons name="trash-outline" size={16} color={colors.red} />
-                <Text style={[styles.actionLabel, { color: colors.red }]}>DELETE</Text>
-              </Pressable>
-              <Pressable style={styles.actionBtn} onPress={handleShare}>
-                <Ionicons name="share-outline" size={16} color={colors.textSecondary} />
-                <Text style={styles.actionLabel}>SHARE</Text>
-              </Pressable>
+            <View style={styles.actionsRowWrap}>
+              <Image
+                source={require('../../assets/noir/day-detail/actions_row.png')}
+                style={styles.actionsRowImg}
+                resizeMode="stretch"
+              />
+              <View style={styles.actionsRowSlot}>
+                <Pressable
+                  style={styles.actionSlotThird}
+                  onPress={() => router.push({ pathname: '/add-activity', params: { date } })}
+                />
+                <Pressable style={styles.actionSlotThird} onPress={handleDelete} />
+                <Pressable style={styles.actionSlotThird} onPress={handleShare} />
+              </View>
             </View>
           </>
         )}
@@ -492,73 +493,83 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  readoutBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.borderStrong,
-    borderRadius: radius.md,
-    paddingVertical: 12,
-    paddingHorizontal: spacing.md,
+  // TIME / EVIDENCE — real asset bars (icon + label baked into the pixels),
+  // only the value is code, dropped into the dashed placeholder's exact spot.
+  timeBarWrap: {
     marginTop: spacing.sm,
-  },
-  readoutLabel: {
-    ...typography.caption,
-    color: colors.textFaint,
-    fontSize: 11,
-    letterSpacing: 1,
-  },
-  readoutValue: {
-    flex: 1,
-    textAlign: 'right',
-    color: colors.textPrimary,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  reportCard: {
-    marginTop: spacing.lg,
-    borderWidth: 1.5,
-    borderColor: colors.borderStrong,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    padding: spacing.sm,
+    width: '100%',
+    aspectRatio: 239 / 68,
     position: 'relative',
   },
-  reportHeaderRow: {
-    flexDirection: 'row',
+  timeBarImg: {
+    width: '100%',
+    height: '100%',
+  },
+  timeBarSlot: {
+    position: 'absolute',
+    left: '43.9%',
+    top: '29.4%',
+    width: '45.2%',
+    height: '41.2%',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  reportTab: {
-    backgroundColor: colors.redSoft,
-    borderWidth: 1,
-    borderColor: colors.red,
-    borderRadius: radius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-  },
-  reportTabLabel: {
-    ...typography.stamp,
-    color: colors.red,
-    fontSize: 11,
-  },
-  reportInner: {
-    backgroundColor: colors.paper,
-    borderRadius: radius.sm,
-    padding: spacing.md,
-    minHeight: 70,
     justifyContent: 'center',
   },
-  reportTape: {
+  evidenceBarWrap: {
+    marginTop: spacing.sm,
+    width: '100%',
+    aspectRatio: 268 / 70,
+    position: 'relative',
+  },
+  evidenceBarImg: {
+    width: '100%',
+    height: '100%',
+  },
+  evidenceBarSlot: {
     position: 'absolute',
-    left: -10,
-    bottom: -10,
-    width: 56,
-    height: 28,
-    transform: [{ rotate: '8deg' }],
+    left: '48.5%',
+    top: '32.9%',
+    width: '24.6%',
+    height: '34.3%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  readoutValue: {
+    color: colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  // REPORT — real asset card (REPORT tab, corner brackets, tape and the
+  // outline favorite star are all baked into report_card.png); only the
+  // note text and the star's filled state are code.
+  reportCardWrap: {
+    marginTop: spacing.lg,
+    width: '100%',
+    aspectRatio: 532 / 212,
+    position: 'relative',
+  },
+  reportCardImg: {
+    width: '100%',
+    height: '100%',
+  },
+  reportStarSlot: {
+    position: 'absolute',
+    left: '91%',
+    top: '4%',
+    width: '8%',
+    height: '14%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reportInner: {
+    position: 'absolute',
+    left: '6.6%',
+    top: '21%',
+    width: '86.5%',
+    height: '67%',
+    justifyContent: 'center',
+  },
+  reportScroll: {
+    flex: 1,
   },
   noteText: {
     color: colors.textOnPaper,
@@ -583,29 +594,27 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 12,
   },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+  // ACTIONS — single real asset for all three buttons; EDIT/DELETE/SHARE are
+  // invisible equal-thirds Pressables laid on top of it.
+  actionsRowWrap: {
     marginTop: spacing.lg,
+    width: '100%',
+    aspectRatio: 502 / 60,
+    position: 'relative',
   },
-  actionBtn: {
-    flex: 1,
+  actionsRowImg: {
+    width: '100%',
+    height: '100%',
+  },
+  actionsRowSlot: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    borderWidth: 1.5,
-    borderColor: colors.borderStrong,
-    borderRadius: radius.md,
-    paddingVertical: 12,
   },
-  deleteBtn: {
-    borderColor: colors.red,
-  },
-  actionLabel: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+  actionSlotThird: {
+    flex: 1,
   },
 });
