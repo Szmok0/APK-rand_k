@@ -58,10 +58,13 @@ Authoritative specs, in order of how concrete/binding they are:
   `ZUZA_DIARY_PROFILER_KONCEPCJA.md` section 14 for the current open list —
   weights, normalization, trait list, archetype mapping, threat-level scoring,
   Field Note pool) — don't invent a "fake psychological system" to fill the
-  gap. `app/(tabs)/profiler.tsx` is now the real hub (background +
-  invisible buttons over its two baked card zones); `app/profiler/dna.tsx`
-  and `app/profiler/lid.tsx` are honest placeholders until that design work
-  lands — not stand-ins for the actual DNA algorithm or LID sliders.
+  gap. `app/(tabs)/profiler.tsx` is the real hub (background + invisible
+  buttons over its two baked card zones); `app/profiler/dna.tsx` is the real
+  RELATIONSHIP DNA screen — a deterministic scoring model over real Activity
+  data (`src/engine/dna.ts`, weights in `src/engine/dnaWeights.ts`, kept
+  separate from the calculation on purpose), never a real psychological
+  measurement. `app/profiler/lid.tsx` is still an honest placeholder until
+  the slider/trait design lands — not a stand-in for THE LID itself.
 - **4 bottom-nav tabs, no FAB**: HOME / CALENDAR / EVIDENCE / PROFILER.
   Comparative Analysis is intentionally not a tab yet (needs ≥2 real Profiler
   assessments to compare against).
