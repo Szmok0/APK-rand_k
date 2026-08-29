@@ -169,7 +169,7 @@ export default function AddActivityScreen() {
                     style={[styles.typeBox, active && styles.typeBoxActive]}
                     onPress={() => toggleGlyph(g.id)}
                   >
-                    <GlyphIcon glyphId={g.id} size={35} />
+                    <GlyphIcon glyphId={g.id} style={styles.typeIcon} />
                     <Text style={[styles.typeLabel, active && styles.typeLabelActive]} numberOfLines={1}>
                       {g.name}
                     </Text>
@@ -389,8 +389,10 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   typeBox: {
+    // Back to close-to-square (was briefly stretched to 0.68 while chasing
+    // "bigger icon" the wrong way — see typeIcon below for the actual fix).
     width: '23%',
-    aspectRatio: 0.68,
+    aspectRatio: 0.92,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
@@ -399,16 +401,26 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.md,
     paddingHorizontal: 2,
+    paddingVertical: 6,
   },
   typeBoxActive: {
     borderColor: colors.gold,
     backgroundColor: colors.goldSoft,
   },
-  // Icon grew (+20%, product feedback) but the label didn't grow with it —
-  // kept small enough to still fit one line in the same box width.
+  // The box itself stays square-ish; the icon fills ~70% of IT instead of the
+  // box growing around a fixed-px icon (that just wasted space and turned
+  // the box into a rectangle). Percentage-sized so it scales with the box
+  // on any screen width instead of a fixed px guess.
+  typeIcon: {
+    width: '70%',
+    height: '70%',
+  },
+  // Bumped up from 8px/textFaint (38% opacity — read as "barely visible") to
+  // a legible size and contrast; still one line, still fits under the icon
+  // now that the box isn't stretched thin by a bigger fixed-px icon.
   typeLabel: {
-    color: colors.textFaint,
-    fontSize: 8,
+    color: colors.textSecondary,
+    fontSize: 10,
     textAlign: 'center',
   },
   typeLabelActive: {
