@@ -94,6 +94,12 @@ export function dateLabelFull(key: string): string {
   return `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
+// '23 AUG 2025' style — used on Day Detail's torn-paper date badge.
+export function dateBadgeLabel(key: string): string {
+  const d = fromDateKey(key);
+  return `${d.getDate()} ${MONTH_NAMES[d.getMonth()].slice(0, 3).toUpperCase()} ${d.getFullYear()}`;
+}
+
 // Zwraca siatkę dni miesiąca (poniedziałek-start), z dniami z sąsiednich miesięcy
 // wypełniającymi pierwszy/ostatni tydzień — jak w mockupie kalendarza.
 export function monthGrid(year: number, month: number): { key: string; inMonth: boolean }[] {

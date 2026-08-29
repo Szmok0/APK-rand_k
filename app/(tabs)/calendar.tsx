@@ -106,7 +106,7 @@ export default function CalendarScreen() {
       </View>
 
       <View style={[styles.panel, styles.panelContent]}>
-        <DayDetailPanel date={selectedDate} fillReport />
+        <DayDetailPanel date={selectedDate} />
       </View>
     </Screen>
   );
