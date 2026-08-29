@@ -63,8 +63,13 @@ Authoritative specs, in order of how concrete/binding they are:
   RELATIONSHIP DNA screen — a deterministic scoring model over real Activity
   data (`src/engine/dna.ts`, weights in `src/engine/dnaWeights.ts`, kept
   separate from the calculation on purpose), never a real psychological
-  measurement. `app/profiler/lid.tsx` is still an honest placeholder until
-  the slider/trait design lands — not a stand-in for THE LID itself.
+  measurement. `app/profiler/lid.tsx` is the real THE LID screen — 9
+  product-owner-specified sliders (`src/data/theLidTraits.ts`,
+  `src/components/TheLidSlider.tsx`), each persisted the moment it's
+  released, no SAVE step. `app/profiler/lid-preview.tsx` is still an honest
+  placeholder — the archetype list/mapping/illustrations THE LID's "RUN THE
+  ANALYSIS" button leads to are explicitly still open design work
+  (`ZUZA_DIARY_PROFILER_KONCEPCJA.md` section 14), not invented here.
 - **4 bottom-nav tabs, no FAB**: HOME / CALENDAR / EVIDENCE / PROFILER.
   Comparative Analysis is intentionally not a tab yet (needs ≥2 real Profiler
   assessments to compare against).

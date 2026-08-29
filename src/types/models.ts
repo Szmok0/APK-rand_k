@@ -39,6 +39,10 @@ export type CaseMeta = {
   subjectName: string; // "ZUZA" — used where the Profiler addresses her directly
   firstContactDate: string; // 'YYYY-MM-DD'
   profilePhotoUri?: string;
+  // THE LID (Profiler) — one 1-5 rating per trait id (src/data/theLidTraits.ts),
+  // keyed by trait id. No separate SAVE step: each slider persists here the
+  // moment it's released (app/profiler/lid.tsx). Missing key = never rated.
+  lidRatings?: Record<string, number>;
 };
 
 export type Relationship = {

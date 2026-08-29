@@ -31,6 +31,7 @@ function defaultCaseMeta(): CaseMeta {
     alias: 'THE LID',
     subjectName: 'ZUZA',
     firstContactDate: '2026-08-04',
+    lidRatings: {},
   };
 }
 

@@ -37,6 +37,7 @@ export default function RootLayout() {
                 <Stack.Screen name="day/[date]" />
                 <Stack.Screen name="profiler/dna" />
                 <Stack.Screen name="profiler/lid" />
+                <Stack.Screen name="profiler/lid-preview" />
                 <Stack.Screen name="note/[date]" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
                 <Stack.Screen name="add-activity" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
                 <Stack.Screen name="settings/index" />
