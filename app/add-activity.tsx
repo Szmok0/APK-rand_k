@@ -22,7 +22,7 @@ import React, { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { GLYPH_CATEGORIES, GLYPH_MAP, GLYPHS } from '@/data/glyphs';
+import { GLYPH_CATEGORIES, GLYPHS } from '@/data/glyphs';
 import { GlyphIcon } from '@/components/GlyphIcon';
 import { TimeRangePicker } from '@/components/TimeRangePicker';
 import { MiniCalendarPicker } from '@/components/MiniCalendarPicker';
@@ -47,7 +47,6 @@ export default function AddActivityScreen() {
   const [photoUri, setPhotoUri] = useState<string | undefined>(undefined);
 
   const [dateExpanded, setDateExpanded] = useState(false);
-  const [timeExpanded, setTimeExpanded] = useState(false);
 
   const existing = getActivityByDate(selectedDate);
 
@@ -75,8 +74,6 @@ export default function AddActivityScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, loading]);
 
-  const needsDuration = glyphIds.some((id) => GLYPH_MAP[id]?.requiresDuration);
-
   function toggleGlyph(id: string) {
     setGlyphIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
@@ -96,8 +93,8 @@ export default function AddActivityScreen() {
     upsertActivity({
       date: selectedDate,
       glyphIds,
-      startTime: needsDuration ? startTime : undefined,
-      endTime: needsDuration ? endTime : undefined,
+      startTime,
+      endTime,
       note: note.trim() || undefined,
       importance,
       photoUri,
@@ -172,7 +169,7 @@ export default function AddActivityScreen() {
                     style={[styles.typeBox, active && styles.typeBoxActive]}
                     onPress={() => toggleGlyph(g.id)}
                   >
-                    <GlyphIcon glyphId={g.id} size={29} />
+                    <GlyphIcon glyphId={g.id} size={35} />
                     <Text style={[styles.typeLabel, active && styles.typeLabelActive]} numberOfLines={1}>
                       {g.name}
                     </Text>
@@ -183,34 +180,23 @@ export default function AddActivityScreen() {
           </View>
         ))}
 
-        {needsDuration && (
-          <>
-            <Text style={styles.sectionLabel}>3. TIME WINDOW</Text>
-            <Pressable style={styles.fieldBox} onPress={() => setTimeExpanded((v) => !v)}>
-              <Ionicons name="time-outline" size={18} color={colors.textSecondary} />
-              <Text style={styles.fieldBoxText}>
-                {startTime} <Text style={styles.timeDash}>–</Text> {endTime}
-              </Text>
-              <Ionicons
-                name={timeExpanded ? 'chevron-up' : 'chevron-down'}
-                size={16}
-                color={colors.textFaint}
-              />
-            </Pressable>
-            {timeExpanded && (
-              <View style={styles.expandedBox}>
-                <TimeRangePicker
-                  startTime={startTime}
-                  endTime={endTime}
-                  onChange={({ startTime: s, endTime: e }) => {
-                    setStartTime(s);
-                    setEndTime(e);
-                  }}
-                />
-              </View>
-            )}
-          </>
-        )}
+        {/* Always visible, always expanded — this used to hide behind both a
+            per-category "does this incident type need a time?" rule AND a
+            tap-to-reveal chevron, and on a real device that read as "the time
+            field disappeared" (picking the wrong incident type, or not
+            tapping the chevron, meant no time picker ever showed at all).
+            Time is useful on any incident type, so it's just always here. */}
+        <Text style={styles.sectionLabel}>3. TIME WINDOW</Text>
+        <View style={styles.timeBox}>
+          <TimeRangePicker
+            startTime={startTime}
+            endTime={endTime}
+            onChange={({ startTime: s, endTime: e }) => {
+              setStartTime(s);
+              setEndTime(e);
+            }}
+          />
+        </View>
 
         <Text style={styles.sectionLabel}>4. REPORT</Text>
         <View style={styles.reportBox}>
@@ -380,6 +366,13 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     marginTop: -1,
   },
+  timeBox: {
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+  },
   categoryBlock: {
     marginBottom: spacing.sm,
   },
@@ -397,7 +390,7 @@ const styles = StyleSheet.create({
   },
   typeBox: {
     width: '23%',
-    aspectRatio: 0.82,
+    aspectRatio: 0.68,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
