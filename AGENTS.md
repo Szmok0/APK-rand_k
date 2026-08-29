@@ -20,6 +20,14 @@ Authoritative specs, in order of how concrete/binding they are:
 2. `docs/HOME_APPROVED_TECH_SPEC.md`, `docs/CALENDAR_TECH_SPEC.md`,
    `docs/ADD_ACTIVITY_TECH_SPEC.md` — approved, concrete screen specs for the
    4 screens actually built (Home, Calendar, Add Activity, Evidence Archive).
+2b. `docs/ZUZA_DIARY_PROFILER_KONCEPCJA.md` — approved working concept for
+   Profiler, superseding MD section 11 wherever more specific: exactly 4
+   screens (PROFILER hub, RELATIONSHIP DNA, THE LID, THE LID PREVIEW) — no
+   Trend/Case Snapshot/Gap/Full Analysis/Diagnosis History/Field Notes
+   screens. RELATIONSHIP DNA is a real algorithm over Activity data (6
+   parameters, weights TBD); THE LID is slider-based (1-5), not a quiz;
+   THE LID PREVIEW needs per-archetype illustration assets that don't exist
+   yet. See section 14 of that doc for what's still open.
 3. `docs/ZUZA_DIARY_CLAUDE_CODE_TECHNICAL_MASTER_v2.md` — earlier, broader
    technical contract. Still useful background, but superseded wherever it
    conflicts with the two docs above (e.g. it originally described Evidence
@@ -46,9 +54,14 @@ Authoritative specs, in order of how concrete/binding they are:
   categories (now English labels) as "incident types" — not replaced by a
   simplified icon set, even though some mockups explored that.
 - **No fake Profiler.** The question bank, scoring/tags and report templates
-  are real product/psychology design work (MD section 9/11) — don't invent a
-  "fake psychological system" to fill the gap. `app/(tabs)/profiler.tsx` is a
-  placeholder until that work is done.
+  are real product/psychology design work (MD section 9/11; see also
+  `ZUZA_DIARY_PROFILER_KONCEPCJA.md` section 14 for the current open list —
+  weights, normalization, trait list, archetype mapping, threat-level scoring,
+  Field Note pool) — don't invent a "fake psychological system" to fill the
+  gap. `app/(tabs)/profiler.tsx` is now the real hub (background +
+  invisible buttons over its two baked card zones); `app/profiler/dna.tsx`
+  and `app/profiler/lid.tsx` are honest placeholders until that design work
+  lands — not stand-ins for the actual DNA algorithm or LID sliders.
 - **4 bottom-nav tabs, no FAB**: HOME / CALENDAR / EVIDENCE / PROFILER.
   Comparative Analysis is intentionally not a tab yet (needs ≥2 real Profiler
   assessments to compare against).
