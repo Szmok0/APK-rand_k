@@ -19,8 +19,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Alert, Image, LayoutChangeEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GLYPH_MAP } from '@/data/glyphs';
@@ -45,15 +45,66 @@ const MESSAGE_IDS = new Set(['message', 'first_message', 'reconnect']);
 // date badge, summary row, photo/priority, TIME, EVIDENCE, REPORT, actions)
 // — product owner spec: "wszystkie ramki powinny być dokładnie w tej samej
 // odległości" (every frame at exactly the same distance from the next).
-const SECTION_GAP = 10;
+// Reduced 10% per follow-up feedback (was 10).
+const SECTION_GAP = 9;
+
+// Real, unmodified aspect ratios of the actual asset files — used to derive
+// exact pixel layout below instead of guessed percentages.
+const PHOTO_FRAME_RATIO = 1389 / 822;
+const PRIORITY_BADGE_RATIO = 1269 / 1043;
+const TIME_BAR_RATIO = 239 / 68;
+const EVIDENCE_BAR_RATIO = 268 / 70;
+// Cap-height of the baked "TIME"/"EVIDENCE"/"ITEMS" label text, measured
+// directly off the source pixels, as a fraction of each bar's full height
+// (~10px of 68px / 70px tall) — the code-drawn value text is sized off this
+// same ratio (with a cap-height→fontSize fudge factor) so it visually
+// matches the baked label's size instead of being picked arbitrarily.
+const TIME_LABEL_CAP_RATIO = 10 / 68;
+const EVIDENCE_LABEL_CAP_RATIO = 10 / 70;
+const CAP_TO_FONT_SIZE = 1.35;
 
 export default function DayDetailScreen() {
   const { date } = useLocalSearchParams<{ date: string }>();
   const { getActivityByDate, deleteActivity, toggleFavorite } = useRelationship();
   const insets = useSafeAreaInsets();
   const [noteRevealed, setNoteRevealed] = useState(false);
+  // Measured once off the header (a plain full-width row, same width as
+  // every other section below it) — real pixel width drives the photo/
+  // priority/TIME/EVIDENCE math below instead of guessed percentages.
+  const [contentWidth, setContentWidth] = useState(345);
+  function onContentLayout(e: LayoutChangeEvent) {
+    setContentWidth(e.nativeEvent.layout.width);
+  }
 
   const activity = getActivityByDate(date);
+
+  // Photo frame is 70% of the FULL row width (product owner spec, in those
+  // words: "na szerokość ekranu ramka zdjęcia ma zajmować 70%"), kept at its
+  // own real aspect ratio so its torn-paper border isn't distorted. Priority
+  // takes the remaining ~30% and is stretched to match the photo's height so
+  // the two sit on the same line — priority is the one asset the product
+  // owner explicitly said to "dostosuj" (adjust/fit) next to the frame.
+  const photoPriorityLayout = useMemo(() => {
+    const available = contentWidth - spacing.sm;
+    const photoWidth = available * 0.7;
+    const priorityWidth = available * 0.3;
+    const photoHeight = photoWidth / PHOTO_FRAME_RATIO;
+    return { photoWidth, photoHeight, priorityWidth, priorityHeight: photoHeight };
+  }, [contentWidth]);
+
+  // TIME/EVIDENCE bars: full row width, each at its OWN native aspect ratio
+  // (not stretched to a shared/different shape), with the value's font size
+  // derived from the baked label's real cap-height so it visually matches.
+  const barLayout = useMemo(() => {
+    const timeHeight = contentWidth / TIME_BAR_RATIO;
+    const evidenceHeight = contentWidth / EVIDENCE_BAR_RATIO;
+    return {
+      timeHeight,
+      evidenceHeight,
+      timeFontSize: timeHeight * TIME_LABEL_CAP_RATIO * CAP_TO_FONT_SIZE,
+      evidenceFontSize: evidenceHeight * EVIDENCE_LABEL_CAP_RATIO * CAP_TO_FONT_SIZE,
+    };
+  }, [contentWidth]);
 
   function handleDelete() {
     if (!activity) return;
@@ -136,7 +187,7 @@ export default function DayDetailScreen() {
       <View style={[StyleSheet.absoluteFill, styles.scrim]} />
 
       <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.sm }]}>
-        <View style={styles.header}>
+        <View style={styles.header} onLayout={onContentLayout}>
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
           </Pressable>
@@ -202,7 +253,12 @@ export default function DayDetailScreen() {
             {(activity.photoUri || activity.importance > 0) && (
               <View style={styles.photoPriorityRow}>
                 {activity.photoUri && (
-                  <View style={styles.photoFrameWrap}>
+                  <View
+                    style={[
+                      styles.photoFrameWrap,
+                      { width: photoPriorityLayout.photoWidth, height: photoPriorityLayout.photoHeight },
+                    ]}
+                  >
                     <Image source={{ uri: activity.photoUri }} style={styles.photoInner} />
                     <Image
                       source={require('../../assets/noir/day-detail/photo_frame.png')}
@@ -211,7 +267,12 @@ export default function DayDetailScreen() {
                   </View>
                 )}
                 {activity.importance > 0 && (
-                  <View style={styles.priorityBadgeWrap}>
+                  <View
+                    style={[
+                      styles.priorityBadgeWrap,
+                      { width: photoPriorityLayout.priorityWidth, height: photoPriorityLayout.priorityHeight },
+                    ]}
+                  >
                     <Image
                       source={require('../../assets/noir/day-detail/priority_badge.png')}
                       style={styles.priorityBadgeImg}
@@ -230,28 +291,34 @@ export default function DayDetailScreen() {
               </View>
             )}
 
-            <View style={styles.timeBarWrap}>
+            <View style={[styles.timeBarWrap, { height: barLayout.timeHeight }]}>
               <Image
                 source={require('../../assets/noir/day-detail/time_bar.png')}
                 style={styles.timeBarImg}
-                resizeMode="stretch"
+                resizeMode="contain"
               />
               <View style={styles.timeBarSlot}>
-                <Text style={styles.readoutValue} numberOfLines={1}>
+                <Text
+                  style={[styles.readoutValue, { fontSize: barLayout.timeFontSize }]}
+                  numberOfLines={1}
+                >
                   {durationHours(activity.startTime, activity.endTime) > 0
                     ? `${activity.startTime} - ${activity.endTime}`
                     : '—'}
                 </Text>
               </View>
             </View>
-            <View style={styles.evidenceBarWrap}>
+            <View style={[styles.evidenceBarWrap, { height: barLayout.evidenceHeight }]}>
               <Image
                 source={require('../../assets/noir/day-detail/evidence_bar.png')}
                 style={styles.evidenceBarImg}
-                resizeMode="stretch"
+                resizeMode="contain"
               />
               <View style={styles.evidenceBarSlot}>
-                <Text style={styles.readoutValue} numberOfLines={1}>
+                <Text
+                  style={[styles.readoutValue, { fontSize: barLayout.evidenceFontSize }]}
+                  numberOfLines={1}
+                >
                   {String(activity.glyphIds.length).padStart(3, '0')}
                 </Text>
               </View>
@@ -481,11 +548,10 @@ const styles = StyleSheet.create({
   },
   // Photo and priority each keep their own real asset's native aspect ratio
   // (they aren't the same shape — the photo frame is a wide vintage-print
-  // border, the priority card is a taller lined-paper note — forcing them
-  // to match distorted the photo frame's border into something unrecognizable).
+  // border, the priority card is a taller lined-paper note). Exact pixel
+  // width/height come from photoPriorityLayout (see component body): photo
+  // is 70% of the row, priority sits at the same height beside it.
   photoFrameWrap: {
-    width: '48%',
-    aspectRatio: 1389 / 822,
     position: 'relative',
   },
   photoInner: {
@@ -501,8 +567,6 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   priorityBadgeWrap: {
-    width: '48%',
-    aspectRatio: 1269 / 1043,
     position: 'relative',
   },
   priorityBadgeImg: {
@@ -523,16 +587,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   // TIME / EVIDENCE — real asset bars (icon + label baked into the pixels),
-  // only the value is code, dropped into the dashed placeholder's exact
-  // spot. Both bars are forced to the SAME size (product owner spec: "takiej
-  // samej wielkości") and a slimmer aspect ratio than either asset's native
-  // crop, so the bar height matches its one line of text instead of leaving
-  // a lot of empty vertical padding — they're plain bordered bars, not
-  // pixel-exact art, so stretching them a bit doesn't cost anything.
+  // rendered at their own real aspect ratio (full row width, height derived
+  // from TIME_BAR_RATIO/EVIDENCE_BAR_RATIO — see barLayout) — not stretched
+  // or forced to match each other's shape. Only the value text is code,
+  // dropped into the dashed placeholder's exact spot, sized off the baked
+  // label's own cap-height (see CAP_TO_FONT_SIZE) so it visually matches.
   timeBarWrap: {
     marginTop: SECTION_GAP,
     width: '100%',
-    aspectRatio: 5.2,
     position: 'relative',
   },
   timeBarImg: {
@@ -551,7 +613,6 @@ const styles = StyleSheet.create({
   evidenceBarWrap: {
     marginTop: SECTION_GAP,
     width: '100%',
-    aspectRatio: 5.2,
     position: 'relative',
   },
   evidenceBarImg: {
