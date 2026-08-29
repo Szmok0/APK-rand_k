@@ -1,5 +1,6 @@
-// DAY DETAIL — full-screen route (deep-link target from Evidence Archive,
-// Add Activity's post-save redirect, and Timeline's day tap). Rebuilt against
+// DAY DETAIL — full-screen route (deep-link target from Evidence Archive and
+// Add Activity's post-save redirect — Timeline is gone, Evidence Archive is
+// its functional replacement). Rebuilt against
 // the product owner's reference screen + asset pack (Aug 2026): a torn-paper
 // date badge, a 6-category summary bar, side-by-side photo/priority cards,
 // stacked TIME/EVIDENCE readouts, and an expandable REPORT card with its own
