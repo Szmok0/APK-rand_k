@@ -31,7 +31,7 @@ import { useRelationship } from '@/store/RelationshipStore';
 import { colors, priorityColors, priorityLabels, radius, spacing, typography } from '@/theme/tokens';
 import { dateLabelFull, todayKey } from '@/utils/dates';
 
-const NOTE_MAX = 600;
+const NOTE_MAX = 1000;
 
 export default function AddActivityScreen() {
   const params = useLocalSearchParams<{ date?: string }>();
@@ -172,7 +172,7 @@ export default function AddActivityScreen() {
                     style={[styles.typeBox, active && styles.typeBoxActive]}
                     onPress={() => toggleGlyph(g.id)}
                   >
-                    <GlyphIcon glyphId={g.id} size={24} />
+                    <GlyphIcon glyphId={g.id} size={29} />
                     <Text style={[styles.typeLabel, active && styles.typeLabelActive]} numberOfLines={1}>
                       {g.name}
                     </Text>
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
   },
   typeBox: {
     width: '23%',
-    aspectRatio: 0.95,
+    aspectRatio: 0.82,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
@@ -411,9 +411,11 @@ const styles = StyleSheet.create({
     borderColor: colors.gold,
     backgroundColor: colors.goldSoft,
   },
+  // Icon grew (+20%, product feedback) but the label didn't grow with it —
+  // kept small enough to still fit one line in the same box width.
   typeLabel: {
     color: colors.textFaint,
-    fontSize: 8.5,
+    fontSize: 8,
     textAlign: 'center',
   },
   typeLabelActive: {

@@ -1,14 +1,19 @@
-import React, { useRef } from 'react';
-import { NativeSyntheticEvent, NativeScrollEvent, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, radius, spacing } from '@/theme/tokens';
 import { hourRange } from '@/utils/dates';
 
-const ITEM_HEIGHT = 36;
-const VISIBLE = 3;
 const HOURS = hourRange();
 
-function HourWheel({
+function stepHour(hour: string, delta: number): string {
+  const index = HOURS.indexOf(hour);
+  const next = (index + delta + HOURS.length) % HOURS.length;
+  return HOURS[next];
+}
+
+function HourStepper({
   label,
   value,
   onChange,
@@ -17,38 +22,26 @@ function HourWheel({
   value: string;
   onChange: (hour: string) => void;
 }) {
-  const scrollRef = useRef<ScrollView>(null);
-  const initialIndex = Math.max(0, HOURS.indexOf(value));
-
-  function handleEnd(e: NativeSyntheticEvent<NativeScrollEvent>) {
-    const index = Math.round(e.nativeEvent.contentOffset.y / ITEM_HEIGHT);
-    const clamped = Math.min(HOURS.length - 1, Math.max(0, index));
-    onChange(HOURS[clamped]);
-  }
-
   return (
-    <View style={styles.wheelColumn}>
-      <Text style={styles.wheelLabel}>{label}</Text>
-      <View style={[styles.wheelViewport, { height: ITEM_HEIGHT * VISIBLE }]}>
-        <View pointerEvents="none" style={styles.wheelHighlight} />
-        <ScrollView
-          ref={scrollRef}
-          showsVerticalScrollIndicator={false}
-          snapToInterval={ITEM_HEIGHT}
-          decelerationRate="fast"
-          contentContainerStyle={{ paddingVertical: ITEM_HEIGHT }}
-          contentOffset={{ x: 0, y: initialIndex * ITEM_HEIGHT }}
-          onMomentumScrollEnd={handleEnd}
-        >
-          {HOURS.map((h) => (
-            <View key={h} style={styles.wheelItem}>
-              <Text style={[styles.wheelItemText, h === value && styles.wheelItemTextActive]}>
-                {h}
-              </Text>
-            </View>
-          ))}
-        </ScrollView>
+    <View style={styles.column}>
+      <Text style={styles.label}>{label}</Text>
+      <Pressable
+        hitSlop={8}
+        style={styles.stepBtn}
+        onPress={() => onChange(stepHour(value, 1))}
+      >
+        <Ionicons name="chevron-up" size={18} color={colors.gold} />
+      </Pressable>
+      <View style={styles.valueBox}>
+        <Text style={styles.valueText}>{value}</Text>
       </View>
+      <Pressable
+        hitSlop={8}
+        style={styles.stepBtn}
+        onPress={() => onChange(stepHour(value, -1))}
+      >
+        <Ionicons name="chevron-down" size={18} color={colors.gold} />
+      </Pressable>
     </View>
   );
 }
@@ -59,13 +52,18 @@ type Props = {
   onChange: (next: { startTime: string; endTime: string }) => void;
 };
 
-// Wybór czasu — wyłącznie scroll/wheel godzin 00–23, nigdy klawiatura (sekcja 8).
+// Time picker — tap-only steppers (up/down chevrons cycle through 00–23), never
+// a keyboard (sekcja 8). Replaces an earlier scroll/wheel version: a vertical
+// snap-scroll wheel nested inside this screen's outer ScrollView never
+// registered gestures on a real Android device (the outer scroll always won
+// the touch), so hour selection silently did nothing. Tap targets have no
+// nested-scroll ambiguity and work the same on every platform.
 export function TimeRangePicker({ startTime, endTime, onChange }: Props) {
   return (
     <View style={styles.row}>
-      <HourWheel label="FROM" value={startTime} onChange={(h) => onChange({ startTime: h, endTime })} />
+      <HourStepper label="FROM" value={startTime} onChange={(h) => onChange({ startTime: h, endTime })} />
       <Text style={styles.dash}>—</Text>
-      <HourWheel label="TO" value={endTime} onChange={(h) => onChange({ startTime, endTime: h })} />
+      <HourStepper label="TO" value={endTime} onChange={(h) => onChange({ startTime, endTime: h })} />
     </View>
   );
 }
@@ -73,50 +71,43 @@ export function TimeRangePicker({ startTime, endTime, onChange }: Props) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.md,
+    gap: spacing.lg,
     marginVertical: spacing.sm,
   },
-  wheelColumn: {
+  column: {
     alignItems: 'center',
   },
-  wheelLabel: {
+  label: {
     color: colors.textFaint,
     fontSize: 11,
     letterSpacing: 1,
     marginBottom: 4,
   },
-  wheelViewport: {
-    width: 80,
-    overflow: 'hidden',
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-  },
-  wheelHighlight: {
-    position: 'absolute',
-    top: ITEM_HEIGHT,
-    left: 0,
-    right: 0,
-    height: ITEM_HEIGHT,
-    borderRadius: radius.sm,
-    backgroundColor: colors.goldSoft,
-  },
-  wheelItem: {
-    height: ITEM_HEIGHT,
+  stepBtn: {
+    width: 44,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  wheelItemText: {
-    color: colors.textFaint,
-    fontSize: 15,
+  valueBox: {
+    width: 80,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
   },
-  wheelItemTextActive: {
+  valueText: {
     color: colors.gold,
     fontWeight: '700',
+    fontSize: 18,
   },
   dash: {
     color: colors.textFaint,
-    marginBottom: ITEM_HEIGHT,
+    marginTop: 18,
   },
 });

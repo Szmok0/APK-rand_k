@@ -7,7 +7,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -45,69 +45,80 @@ export default function CalendarScreen() {
       />
       <View style={[StyleSheet.absoluteFill, styles.scrim]} />
 
-      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <Pressable onPress={() => router.push('/settings')} hitSlop={12}>
-          <Ionicons name="menu-outline" size={22} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>CALENDAR</Text>
-        <Pressable
-          onPress={() => router.push({ pathname: '/add-activity', params: { date: selectedDate } })}
-          hitSlop={12}
-        >
-          <Ionicons name="add" size={24} color={colors.gold} />
-        </Pressable>
-      </View>
-
-      <View style={styles.grid}>
-        <MonthCalendar
-          useGridImage
-          onSelectDay={setSelectedDate}
-          renderCell={(dateKey, inMonth) => (
-            <CalendarDayCell
-              dayNumber={fromDateKey(dateKey).getDate()}
-              inMonth={inMonth}
-              isToday={dateKey === today}
-              isSelected={dateKey === selectedDate}
-              activity={activityByDate.get(dateKey)}
-            />
-          )}
-        />
-      </View>
-
-      <View style={styles.ticketOuter}>
-        <View style={styles.ticketImgWrap}>
-          <Image
-            source={require('../../assets/noir/calendar/ticket_blank.png')}
-            style={styles.ticketImg}
-          />
-
-          {/* The real ticket asset already bakes in "CASE FILE #", "DAILY
-              LOG" and a "RECORDED" stamp — code only fills the 4 real blank
-              slots: month/day-number/weekday and the file number. The
-              RECORDED stamp is baked unconditionally, so an opaque patch
-              covers it on days with no activity (never claim a day was
-              recorded when it wasn't). */}
-          <View style={styles.ticketMonthSlot}>
-            <Text style={styles.ticketMonth}>{MONTH_ABBR[selectedDay.getMonth()]}</Text>
-          </View>
-          <View style={styles.ticketDaySlot}>
-            <Text style={styles.ticketDayNumber}>{selectedDay.getDate()}</Text>
-          </View>
-          <View style={styles.ticketWeekdaySlot}>
-            <Text style={styles.ticketWeekday}>{dayLabelFull(selectedDate)}</Text>
-          </View>
-          <View style={styles.ticketFileNumSlot}>
-            <Text style={styles.ticketFileNum}>
-              {selectedDay.getDate().toString().padStart(3, '0')}
-            </Text>
-          </View>
-          {!hasActivity && <View style={styles.recordedCover} />}
+      {/* The whole screen scrolls now — header, grid, ticket and the day
+          panel are all one continuous ScrollView, same pattern as Evidence
+          Archive/Day Detail/Add Activity, instead of a fixed header+grid+
+          ticket with only the panel below scrollable. That fixed layout
+          assumed the grid+ticket would always leave enough room for the
+          panel; on a real device where they don't, this is what actually
+          guarantees every part of the screen stays reachable. */}
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.sm }]}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.push('/settings')} hitSlop={12}>
+            <Ionicons name="menu-outline" size={22} color={colors.textPrimary} />
+          </Pressable>
+          <Text style={styles.headerTitle}>CALENDAR</Text>
+          <Pressable
+            onPress={() => router.push({ pathname: '/add-activity', params: { date: selectedDate } })}
+            hitSlop={12}
+          >
+            <Ionicons name="add" size={24} color={colors.gold} />
+          </Pressable>
         </View>
-      </View>
 
-      <View style={[styles.panel, styles.panelContent]}>
-        <DayDetailPanel date={selectedDate} />
-      </View>
+        <View style={styles.grid}>
+          <MonthCalendar
+            useGridImage
+            onSelectDay={setSelectedDate}
+            renderCell={(dateKey, inMonth) => (
+              <CalendarDayCell
+                dayNumber={fromDateKey(dateKey).getDate()}
+                inMonth={inMonth}
+                isToday={dateKey === today}
+                isSelected={dateKey === selectedDate}
+                activity={activityByDate.get(dateKey)}
+              />
+            )}
+          />
+        </View>
+
+        <View style={styles.ticketOuter}>
+          <View style={styles.ticketImgWrap}>
+            <Image
+              source={require('../../assets/noir/calendar/ticket_blank.png')}
+              style={styles.ticketImg}
+            />
+
+            {/* The real ticket asset already bakes in "CASE FILE #", "DAILY
+                LOG" and a "RECORDED" stamp — code only fills the 4 real blank
+                slots: month/day-number/weekday and the file number. The
+                RECORDED stamp is baked unconditionally, so an opaque patch
+                covers it on days with no activity (never claim a day was
+                recorded when it wasn't). */}
+            <View style={styles.ticketMonthSlot}>
+              <Text style={styles.ticketMonth}>{MONTH_ABBR[selectedDay.getMonth()]}</Text>
+            </View>
+            <View style={styles.ticketDaySlot}>
+              <Text style={styles.ticketDayNumber}>{selectedDay.getDate()}</Text>
+            </View>
+            <View style={styles.ticketWeekdaySlot}>
+              <Text style={styles.ticketWeekday}>{dayLabelFull(selectedDate)}</Text>
+            </View>
+            <View style={styles.ticketFileNumSlot}>
+              <Text style={styles.ticketFileNum}>
+                {selectedDay.getDate().toString().padStart(3, '0')}
+              </Text>
+            </View>
+            {!hasActivity && <View style={styles.recordedCover} />}
+          </View>
+        </View>
+
+        <View style={styles.panelContent}>
+          <DayDetailPanel date={selectedDate} />
+        </View>
+
+        <View style={{ height: insets.bottom + spacing.xl }} />
+      </ScrollView>
     </Screen>
   );
 }
@@ -121,6 +132,9 @@ const styles = StyleSheet.create({
   },
   scrim: {
     backgroundColor: 'rgba(12, 10, 8, 0.7)',
+  },
+  content: {
+    paddingBottom: spacing.xl,
   },
   header: {
     flexDirection: 'row',
@@ -227,17 +241,8 @@ const styles = StyleSheet.create({
     height: '43%',
     backgroundColor: colors.paper,
   },
-  // overflow:'hidden' is a safety net: if the grid+ticket above ever leave
-  // less room than the panel below needs, this clips at the boundary
-  // instead of the panel's content visually drawing over the tab bar.
-  panel: {
-    flex: 1,
-    minHeight: 0,
-    overflow: 'hidden',
-  },
   panelContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xs,
-    paddingBottom: spacing.xs,
   },
 });

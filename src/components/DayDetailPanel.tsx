@@ -1,19 +1,20 @@
 // "Case Day" content — the inline Calendar preview panel (product owner spec,
 // Aug 2026): bordered-square badge icons, code-drawn TIME/EVIDENCE boxes side
-// by side, and a REPORT card that fills all remaining space down to the tab
-// bar with its own internal scroll — no glyph list, priority badge or photo
-// (no room left once REPORT takes the rest). The richer, full-screen version
-// of a day lives at app/day/[date].tsx as its own standalone screen, not a
-// second mode of this component (it used to be — see git history — but its
-// layout diverged enough from this compact scheme that sharing one component
-// meant an unused branch here for every screen-specific tweak there).
+// by side, and a compact REPORT card — no glyph list, priority badge or photo
+// (no room left, see app/day/[date].tsx for the full-screen version of a day).
+// REPORT no longer scrolls its note inline: it's a Pressable that opens the
+// note in its own full screen (app/note/[date].tsx). A nested ScrollView here
+// never registered scroll gestures on a real Android device (the outer
+// Calendar screen's scroll always won the touch), so any note longer than the
+// card's fixed height was simply unreachable — this sidesteps that instead of
+// re-fighting it.
 
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { GoldButton, OutlineButton } from '@/components/ui';
+import { GoldButton } from '@/components/ui';
 import { DAY_BADGE_COLORS, DAY_BADGE_ICON_NAMES, dayBadges } from '@/engine/dayBadges';
 import * as Sharing from 'expo-sharing';
 import { useRelationship } from '@/store/RelationshipStore';
@@ -26,7 +27,6 @@ type Props = {
 
 export function DayDetailPanel({ date }: Props) {
   const { getActivityByDate, deleteActivity } = useRelationship();
-  const [noteRevealed, setNoteRevealed] = useState(false);
 
   const activity = getActivityByDate(date);
   const hours = activity ? durationHours(activity.startTime, activity.endTime) : 0;
@@ -70,16 +70,6 @@ export function DayDetailPanel({ date }: Props) {
   const badges = dayBadges(activity);
   const timeValue = hours > 0 ? `${activity.startTime} – ${activity.endTime}` : '—';
   const evidenceValue = `${activity.glyphIds.length} ${activity.glyphIds.length === 1 ? 'ITEM' : 'ITEMS'}`;
-
-  const reportBody = activity.note ? (
-    noteRevealed ? (
-      <Text style={styles.noteText}>{activity.note}</Text>
-    ) : (
-      <OutlineButton label="Reveal Report" onPress={() => setNoteRevealed(true)} />
-    )
-  ) : (
-    <Text style={styles.noNote}>No written statement attached.</Text>
-  );
 
   return (
     <View style={styles.fillRoot}>
@@ -133,9 +123,18 @@ export function DayDetailPanel({ date }: Props) {
             </Pressable>
           </View>
         </View>
-        <ScrollView style={styles.reportScroll} contentContainerStyle={styles.reportScrollContent}>
-          {reportBody}
-        </ScrollView>
+        <Pressable
+          style={styles.reportBody}
+          onPress={() => router.push({ pathname: '/note/[date]', params: { date } })}
+        >
+          {activity.note ? (
+            <Text style={styles.noteText} numberOfLines={3}>
+              {activity.note}
+            </Text>
+          ) : (
+            <Text style={styles.noNote}>No written statement attached. Tap to add one.</Text>
+          )}
+        </Pressable>
         <Image
           source={require('../../assets/noir/calendar/tape_piece.png')}
           style={styles.reportTape}
@@ -162,8 +161,10 @@ const styles = StyleSheet.create({
   },
   // --- fillReport (Calendar screen) styles ---
   fillRoot: {
-    flex: 1,
-    minHeight: 0,
+    // No longer flex:1 — REPORT sizes to its content now instead of trying
+    // to fill all remaining space for an internal scroll, so this panel
+    // can't overflow past the tab bar regardless of how tall the grid/
+    // ticket above it render on a given device.
   },
   badgeRowCode: {
     flexDirection: 'row',
@@ -220,12 +221,6 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   reportCardFill: {
-    flex: 1,
-    // minHeight: 0 lets this actually shrink to the space left over instead
-    // of overflowing past it (the standard flex-item-with-scrollable-child
-    // pitfall) — without it the card (and the tab bar under it) could get
-    // pushed past the screen bottom when the grid+ticket above are tall.
-    minHeight: 0,
     marginTop: spacing.sm,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
@@ -250,11 +245,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.md,
   },
-  reportScroll: {
-    flex: 1,
-  },
-  reportScrollContent: {
-    paddingBottom: spacing.md,
+  reportBody: {
+    minHeight: 44,
   },
   reportTape: {
     position: 'absolute',

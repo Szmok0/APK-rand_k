@@ -29,7 +29,7 @@ import { Screen } from '@/components/ui';
 import { dailyQuote } from '@/engine/quote';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, moodColors, priorityColors, priorityLabels, radius, spacing, typography } from '@/theme/tokens';
-import { dateBadgeLabel, dayLabelFull, durationHours, fromDateKey } from '@/utils/dates';
+import { dateBadgeLabel, dayLabelFull, durationHours } from '@/utils/dates';
 
 type SummaryItem = {
   key: string;
@@ -63,12 +63,15 @@ const EVIDENCE_BAR_RATIO = 268 / 70;
 const TIME_LABEL_CAP_RATIO = 10 / 68;
 const EVIDENCE_LABEL_CAP_RATIO = 10 / 70;
 const CAP_TO_FONT_SIZE = 1.35;
+// TIME/EVIDENCE bars shrunk 20% per follow-up feedback ("ramki time i
+// evidence są za duże, zmniejszyć o 20%") — they no longer span the full
+// row, just this fraction of it, centered.
+const BAR_SCALE = 0.8;
 
 export default function DayDetailScreen() {
   const { date } = useLocalSearchParams<{ date: string }>();
   const { getActivityByDate, deleteActivity, toggleFavorite } = useRelationship();
   const insets = useSafeAreaInsets();
-  const [noteRevealed, setNoteRevealed] = useState(false);
   // Measured once off the header (a plain full-width row, same width as
   // every other section below it) — real pixel width drives the photo/
   // priority/TIME/EVIDENCE math below instead of guessed percentages.
@@ -78,6 +81,10 @@ export default function DayDetailScreen() {
   }
 
   const activity = getActivityByDate(date);
+  // Picked once per visit (empty deps), not on every re-render — matches
+  // "should change each time you enter the screen" without also reshuffling
+  // mid-visit on unrelated state updates (e.g. toggling favorite).
+  const quote = useMemo(() => dailyQuote(), []);
 
   // Photo frame is 70% of the FULL row width (product owner spec, in those
   // words: "na szerokość ekranu ramka zdjęcia ma zajmować 70%"), kept at its
@@ -97,9 +104,11 @@ export default function DayDetailScreen() {
   // (not stretched to a shared/different shape), with the value's font size
   // derived from the baked label's real cap-height so it visually matches.
   const barLayout = useMemo(() => {
-    const timeHeight = contentWidth / TIME_BAR_RATIO;
-    const evidenceHeight = contentWidth / EVIDENCE_BAR_RATIO;
+    const barWidth = contentWidth * BAR_SCALE;
+    const timeHeight = barWidth / TIME_BAR_RATIO;
+    const evidenceHeight = barWidth / EVIDENCE_BAR_RATIO;
     return {
+      barWidth,
       timeHeight,
       evidenceHeight,
       timeFontSize: timeHeight * TIME_LABEL_CAP_RATIO * CAP_TO_FONT_SIZE,
@@ -203,7 +212,7 @@ export default function DayDetailScreen() {
         />
 
         <View style={styles.quoteBox}>
-          <Text style={styles.quoteText}>&ldquo;{dailyQuote(fromDateKey(date))}&rdquo;</Text>
+          <Text style={styles.quoteText}>&ldquo;{quote}&rdquo;</Text>
           <Text style={styles.quoteAttribution}>— UNKNOWN WITNESS</Text>
         </View>
 
@@ -239,7 +248,8 @@ export default function DayDetailScreen() {
                 {summary.map((s) => (
                   <View key={s.key} style={styles.summaryCard}>
                     <View style={styles.summaryIconWrap}>
-                      <Ionicons name={s.icon} size={14} color={s.color} />
+                      {/* +10% per follow-up feedback ("ikony są za małe") */}
+                      <Ionicons name={s.icon} size={16} color={s.color} />
                       <View style={[styles.summaryDot, { backgroundColor: s.color }]} />
                     </View>
                     <Text style={styles.summaryValue}>{s.count}</Text>
@@ -253,20 +263,28 @@ export default function DayDetailScreen() {
 
             {(activity.photoUri || activity.importance > 0) && (
               <View style={styles.photoPriorityRow}>
-                {activity.photoUri && (
-                  <View
-                    style={[
-                      styles.photoFrameWrap,
-                      { width: photoPriorityLayout.photoWidth, height: photoPriorityLayout.photoHeight },
-                    ]}
-                  >
+                {/* Always shown once this row renders at all — even with no
+                    photo attached — so a lone priority card never sits next
+                    to a jarring empty void ("jeśli nie ma zdjęcia musi
+                    pojawić się ramka - nawet pusta żeby zachować strukturę"). */}
+                <View
+                  style={[
+                    styles.photoFrameWrap,
+                    { width: photoPriorityLayout.photoWidth, height: photoPriorityLayout.photoHeight },
+                  ]}
+                >
+                  {activity.photoUri ? (
                     <Image source={{ uri: activity.photoUri }} style={styles.photoInner} />
-                    <Image
-                      source={require('../../assets/noir/day-detail/photo_frame.png')}
-                      style={styles.photoFrameArt}
-                    />
-                  </View>
-                )}
+                  ) : (
+                    <View style={styles.photoEmptySlot}>
+                      <Ionicons name="image-outline" size={22} color={colors.textFaint} />
+                    </View>
+                  )}
+                  <Image
+                    source={require('../../assets/noir/day-detail/photo_frame.png')}
+                    style={styles.photoFrameArt}
+                  />
+                </View>
                 {activity.importance > 0 && (
                   <View
                     style={[
@@ -292,7 +310,7 @@ export default function DayDetailScreen() {
               </View>
             )}
 
-            <View style={[styles.timeBarWrap, { height: barLayout.timeHeight }]}>
+            <View style={[styles.timeBarWrap, { width: barLayout.barWidth, height: barLayout.timeHeight }]}>
               <Image
                 source={require('../../assets/noir/day-detail/time_bar.png')}
                 style={styles.timeBarImg}
@@ -309,7 +327,7 @@ export default function DayDetailScreen() {
                 </Text>
               </View>
             </View>
-            <View style={[styles.evidenceBarWrap, { height: barLayout.evidenceHeight }]}>
+            <View style={[styles.evidenceBarWrap, { width: barLayout.barWidth, height: barLayout.evidenceHeight }]}>
               <Image
                 source={require('../../assets/noir/day-detail/evidence_bar.png')}
                 style={styles.evidenceBarImg}
@@ -334,21 +352,23 @@ export default function DayDetailScreen() {
               <Pressable style={styles.reportStarSlot} hitSlop={8} onPress={() => toggleFavorite(activity.id)}>
                 {activity.favorite && <Ionicons name="star" size={16} color={colors.gold} />}
               </Pressable>
-              <View style={styles.reportInner}>
+              {/* The card's own asset has a small, fixed inner area — too
+                  small for a real report, and its nested scroll never
+                  registered gestures on a real device anyway (outer
+                  ScrollView always won). Tapping opens the note in its own
+                  full screen instead. */}
+              <Pressable
+                style={styles.reportInner}
+                onPress={() => router.push({ pathname: '/note/[date]', params: { date } })}
+              >
                 {activity.note ? (
-                  noteRevealed ? (
-                    <ScrollView style={styles.reportScroll}>
-                      <Text style={styles.noteText}>{activity.note}</Text>
-                    </ScrollView>
-                  ) : (
-                    <Pressable style={styles.revealBtn} onPress={() => setNoteRevealed(true)}>
-                      <Text style={styles.revealBtnLabel}>Reveal Report</Text>
-                    </Pressable>
-                  )
+                  <Text style={styles.noteText} numberOfLines={3}>
+                    {activity.note}
+                  </Text>
                 ) : (
-                  <Text style={styles.noNote}>No written statement attached.</Text>
+                  <Text style={styles.noNote}>No written statement attached. Tap to add one.</Text>
                 )}
-              </View>
+              </Pressable>
             </View>
 
             <View style={styles.actionsRowWrap}>
@@ -423,8 +443,9 @@ const styles = StyleSheet.create({
     maxWidth: '78%',
   },
   quoteText: {
-    color: colors.textSecondary,
+    color: colors.textPrimary,
     fontSize: 13,
+    fontWeight: '600',
     fontStyle: 'italic',
     lineHeight: 19,
     textAlign: 'center',
@@ -563,6 +584,15 @@ const styles = StyleSheet.create({
     height: '87%',
     borderRadius: 2,
   },
+  photoEmptySlot: {
+    position: 'absolute',
+    left: '4%',
+    top: '5%',
+    width: '92%',
+    height: '87%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   photoFrameArt: {
     width: '100%',
     height: '100%',
@@ -594,8 +624,8 @@ const styles = StyleSheet.create({
   // dropped into the dashed placeholder's exact spot, sized off the baked
   // label's own cap-height (see CAP_TO_FONT_SIZE) so it visually matches.
   timeBarWrap: {
+    alignSelf: 'center',
     marginTop: SECTION_GAP,
-    width: '100%',
     position: 'relative',
   },
   timeBarImg: {
@@ -612,8 +642,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   evidenceBarWrap: {
+    alignSelf: 'center',
     marginTop: SECTION_GAP,
-    width: '100%',
     position: 'relative',
   },
   evidenceBarImg: {
@@ -665,9 +695,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  reportScroll: {
-    flex: 1,
-  },
   noteText: {
     color: colors.textOnPaper,
     fontSize: 12,
@@ -676,19 +703,6 @@ const styles = StyleSheet.create({
   noNote: {
     color: colors.textOnPaper,
     opacity: 0.6,
-    fontSize: 12,
-  },
-  revealBtn: {
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderColor: colors.textOnPaper,
-    borderRadius: radius.sm,
-    paddingVertical: 8,
-    paddingHorizontal: spacing.md,
-  },
-  revealBtnLabel: {
-    color: colors.textOnPaper,
-    fontWeight: '600',
     fontSize: 12,
   },
   // ACTIONS — single real asset for all three buttons; EDIT/DELETE/SHARE are
