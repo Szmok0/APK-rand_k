@@ -202,7 +202,8 @@ export const SEED_ACTIVITIES: Activity[] = [
   }
 ];
 
-// Earliest seeded activity date — used as CaseMeta.firstContactDate so
-// "days together" in Profiler reads correctly against this real history
-// instead of the unrelated hardcoded default.
-export const SEED_FIRST_CONTACT_DATE = '2026-08-02';
+// Product-owner-specified "day 1" — NOT the earliest seeded activity
+// (2026-08-02): the 08-02 and 08-03 entries are pre-relationship backstory
+// (swiping/matching before he was a real person in her life), not first
+// contact with him. First real contact is the 08-04 first_message entry.
+export const SEED_FIRST_CONTACT_DATE = '2026-08-04';

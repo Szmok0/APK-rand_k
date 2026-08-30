@@ -29,6 +29,13 @@ export function CalendarDayCell({ dayNumber, inMonth, isToday, isSelected, activ
         new Set(activity.glyphIds.map((id) => GLYPH_MAP[id]?.moodTag).filter((m): m is NonNullable<typeof m> => !!m))
       )
     : [];
+  // Real bug, found via a real seeded day: DATING-category glyphs (swipe,
+  // match, tinder_installed, invitation) are moodTag: null by design — a day
+  // whose ONLY activity is one of those got zero dots at all, reading as an
+  // empty day on the grid even though it's a real, recorded (sometimes
+  // CRITICAL-priority) entry. A neutral dot fills that gap without touching
+  // what mood colors mean.
+  const hasNeutralActivity = !!activity && activity.glyphIds.length > 0 && moodTags.length === 0;
 
   return (
     <View style={styles.wrap}>
@@ -45,12 +52,18 @@ export function CalendarDayCell({ dayNumber, inMonth, isToday, isSelected, activ
         {dayNumber}
       </Text>
 
-      {moodTags.length > 0 && (
+      {moodTags.length > 0 ? (
         <View style={styles.indicatorRow}>
           {moodTags.slice(0, 2).map((tag) => (
             <View key={tag} style={[styles.indicator, { backgroundColor: moodColors[tag] }]} />
           ))}
         </View>
+      ) : (
+        hasNeutralActivity && (
+          <View style={styles.indicatorRow}>
+            <View style={[styles.indicator, { backgroundColor: colors.textFaint }]} />
+          </View>
+        )
       )}
     </View>
   );
