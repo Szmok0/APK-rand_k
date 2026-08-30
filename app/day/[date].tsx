@@ -26,6 +26,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GLYPH_MAP } from '@/data/glyphs';
 import { Screen } from '@/components/ui';
+import { emptyStateFor } from '@/engine/emptyState';
 import { dailyQuote } from '@/engine/quote';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, moodColors, priorityColors, priorityLabels, radius, spacing, typography } from '@/theme/tokens';
@@ -85,6 +86,14 @@ export default function DayDetailScreen() {
   // "should change each time you enter the screen" without also reshuffling
   // mid-visit on unrelated state updates (e.g. toggling favorite).
   const quote = useMemo(() => dailyQuote(), []);
+  // Same "picked once per visit" convention as the quote above — was
+  // hardcoded to always show EMPTY_STATES id 4 verbatim, never the other 3
+  // lines written for this exact group (found during the pre-handoff audit).
+  const emptyState = useMemo(() => emptyStateFor('CALENDAR / EMPTY DAY'), []);
+  // Same fix, different spot: the REPORT card's "no note yet" placeholder
+  // (shown when the day HAS an activity but no note text) was also frozen on
+  // one hardcoded line instead of rotating between the pool's 2 options.
+  const noteEmptyState = useMemo(() => emptyStateFor('EVIDENCE / NO TEXT NOTE'), []);
 
   // Photo frame is 70% of the FULL row width (product owner spec, in those
   // words: "na szerokość ekranu ramka zdjęcia ma zajmować 70%"), kept at its
@@ -232,8 +241,8 @@ export default function DayDetailScreen() {
 
         {!activity ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>No incident recorded.</Text>
-            <Text style={styles.emptySubtext}>This does not prove nothing happened.</Text>
+            <Text style={styles.emptyText}>{emptyState.main}</Text>
+            <Text style={styles.emptySubtext}>{emptyState.sub}</Text>
             <Pressable
               style={styles.addBtn}
               onPress={() => router.push({ pathname: '/add-activity', params: { date } })}
@@ -366,7 +375,7 @@ export default function DayDetailScreen() {
                     {activity.note}
                   </Text>
                 ) : (
-                  <Text style={styles.noNote}>No written statement attached. Tap to add one.</Text>
+                  <Text style={styles.noNote}>{noteEmptyState.main} Tap to add one.</Text>
                 )}
               </Pressable>
             </View>

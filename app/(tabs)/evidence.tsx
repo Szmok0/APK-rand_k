@@ -42,6 +42,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GLYPH_MAP } from '@/data/glyphs';
 import { DAY_BADGE_COLORS, DAY_BADGE_ICON_NAMES, dayBadges } from '@/engine/dayBadges';
 import { Screen } from '@/components/ui';
+import { emptyStateFor } from '@/engine/emptyState';
 import { buildEvidenceArchive, exhibitLabel, filterExhibits, sortExhibits } from '@/engine/evidence';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
@@ -79,6 +80,10 @@ export default function EvidenceScreen() {
         });
     return sortExhibits(searched, 'NEWEST');
   }, [archive, filter, query]);
+
+  // Picked once per screen visit (empty deps), not once per filter/search
+  // keystroke — otherwise the line would visibly flicker while typing.
+  const emptyState = useMemo(() => emptyStateFor('EVIDENCE / EMPTY'), []);
 
   return (
     <Screen>
@@ -150,8 +155,8 @@ export default function EvidenceScreen() {
         {exhibits.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="folder-open-outline" size={32} color={colors.textFaint} />
-            <Text style={styles.emptyText}>No evidence collected yet.</Text>
-            <Text style={styles.emptySubtext}>Either nothing happened or nobody documented it.</Text>
+            <Text style={styles.emptyText}>{emptyState.main}</Text>
+            <Text style={styles.emptySubtext}>{emptyState.sub}</Text>
           </View>
         ) : (
           <View style={styles.list}>

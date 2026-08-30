@@ -13,6 +13,7 @@ import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Screen } from '@/components/ui';
+import { emptyStateFor } from '@/engine/emptyState';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, spacing, typography } from '@/theme/tokens';
 import { dateBadgeLabel } from '@/utils/dates';
@@ -27,6 +28,10 @@ export default function NoteScreen() {
   const activity = getActivityByDate(date);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(activity?.note ?? '');
+  // Picked once per screen visit — was hardcoded to always show the same
+  // line (id 18) even though the pool has 2 rotating options for this exact
+  // empty state.
+  const [emptyState] = useState(() => emptyStateFor('EVIDENCE / NO TEXT NOTE'));
 
   // Keep the draft in sync with the stored note whenever we're not actively
   // editing (e.g. arriving fresh, or after a save/delete resets isEditing).
@@ -121,7 +126,7 @@ export default function NoteScreen() {
           <Text style={styles.noteText}>{activity.note}</Text>
         ) : (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No written statement attached.</Text>
+            <Text style={styles.emptyText}>{emptyState.main}</Text>
             <Pressable style={styles.addBtn} onPress={() => setIsEditing(true)}>
               <Ionicons name="pencil-outline" size={16} color={colors.textOnPaper} />
               <Text style={styles.addBtnLabel}>Write a report</Text>

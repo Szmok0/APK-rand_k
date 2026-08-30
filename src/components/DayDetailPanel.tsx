@@ -11,11 +11,12 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { GoldButton } from '@/components/ui';
 import { DAY_BADGE_COLORS, DAY_BADGE_ICON_NAMES, dayBadges } from '@/engine/dayBadges';
+import { emptyStateFor } from '@/engine/emptyState';
 import * as Sharing from 'expo-sharing';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
@@ -30,6 +31,15 @@ export function DayDetailPanel({ date }: Props) {
 
   const activity = getActivityByDate(date);
   const hours = activity ? durationHours(activity.startTime, activity.endTime) : 0;
+  // This component stays mounted while the user taps between days on
+  // Calendar (only `date` changes) — keyed on date so different empty days
+  // can show different lines instead of one pick frozen for the whole
+  // session (found alongside the same hardcoded-line issue in day/[date].tsx).
+  const emptyState = useMemo(() => emptyStateFor('CALENDAR / EMPTY DAY'), [date]);
+  // Same fix, different spot: the REPORT card's "no note yet" placeholder
+  // (shown when the day HAS an activity but no note text) was also frozen on
+  // one hardcoded line instead of rotating between the pool's 2 options.
+  const noteEmptyState = useMemo(() => emptyStateFor('EVIDENCE / NO TEXT NOTE'), [date]);
 
   function handleDelete() {
     if (!activity) return;
@@ -56,8 +66,8 @@ export function DayDetailPanel({ date }: Props) {
   if (!activity) {
     return (
       <View style={styles.empty}>
-        <Text style={styles.emptyText}>No incident recorded.</Text>
-        <Text style={styles.emptySubtext}>This does not prove nothing happened.</Text>
+        <Text style={styles.emptyText}>{emptyState.main}</Text>
+        <Text style={styles.emptySubtext}>{emptyState.sub}</Text>
         <GoldButton
           label="+ Add Activity"
           onPress={() => router.push({ pathname: '/add-activity', params: { date } })}
@@ -132,7 +142,7 @@ export function DayDetailPanel({ date }: Props) {
               {activity.note}
             </Text>
           ) : (
-            <Text style={styles.noNote}>No written statement attached. Tap to add one.</Text>
+            <Text style={styles.noNote}>{noteEmptyState.main} Tap to add one.</Text>
           )}
         </Pressable>
         <Image

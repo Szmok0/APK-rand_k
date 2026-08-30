@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SettingsRow } from '@/components/SettingsRow';
 import { Screen } from '@/components/ui';
+import { emptyStateFor } from '@/engine/emptyState';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, spacing, typography } from '@/theme/tokens';
 import { pickImportFile, shareExportFile } from '@/utils/fileIO';
@@ -69,7 +70,13 @@ export default function SettingsScreen() {
         },
       ]);
     } catch (e) {
-      Alert.alert('Import failed', String(e));
+      // Was hardcoded to always show "Import failed." (id 45) even though
+      // the pool has 2 rotating options for this exact failure — the real
+      // error still goes to the console for debugging, it just isn't the
+      // user-facing copy (that's in-universe noir flavor, not a stack trace).
+      console.error('Import failed:', e);
+      const { main, sub } = emptyStateFor('IMPORT / INVALID FILE');
+      Alert.alert(main, sub);
     } finally {
       setBusy(false);
     }

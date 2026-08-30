@@ -4,11 +4,12 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Screen } from '@/components/ui';
+import { emptyStateFor } from '@/engine/emptyState';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, radius, spacing, typography } from '@/theme/tokens';
 import { shareExportFile } from '@/utils/fileIO';
@@ -21,6 +22,9 @@ function formatClosedAt(iso: string) {
 export default function ArchiveScreen() {
   const { archives } = useRelationship();
   const insets = useSafeAreaInsets();
+  // Was hardcoded to always show the same line (id 37) even though the
+  // pool has 2 rotating options for this exact empty state.
+  const emptyState = useMemo(() => emptyStateFor('CASE ARCHIVE / EMPTY'), []);
 
   async function handleExport(entryId: string) {
     const entry = archives.find((a) => a.id === entryId);
@@ -54,8 +58,8 @@ export default function ArchiveScreen() {
 
       {archives.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>No archived cases.</Text>
-          <Text style={styles.emptySubtext}>The current one has not earned retirement yet.</Text>
+          <Text style={styles.emptyText}>{emptyState.main}</Text>
+          <Text style={styles.emptySubtext}>{emptyState.sub}</Text>
         </View>
       ) : (
         <FlatList
