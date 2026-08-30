@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import type { Activity, ArchiveEntry, CaseMeta, ExportFile, Relationship } from '@/types/models';
+import { SEED_ACTIVITIES, SEED_FIRST_CONTACT_DATE } from '@/data/seedRelationship';
 import { todayKey } from '@/utils/dates';
 
 const RELATIONSHIP_KEY = '@zuza-case/activities';
@@ -77,9 +78,26 @@ export function RelationshipProvider({ children }: { children: React.ReactNode }
           AsyncStorage.getItem(ARCHIVES_KEY),
           AsyncStorage.getItem(CASE_META_KEY),
         ]);
-        if (relRaw) setRelationship(JSON.parse(relRaw));
+        if (relRaw) {
+          setRelationship(JSON.parse(relRaw));
+        } else if (SEED_ACTIVITIES.length > 0) {
+          // Genuinely fresh install (nothing in AsyncStorage at all) + a
+          // populated gift-build seed — see src/data/seedRelationship.ts for
+          // why this exists and how to turn it off again. Persisted
+          // immediately so it behaves exactly like normal saved data from
+          // here on (editable/deletable, survives the next launch).
+          const seeded: Relationship = { activities: SEED_ACTIVITIES, startedAt: todayKey() };
+          setRelationship(seeded);
+          await AsyncStorage.setItem(RELATIONSHIP_KEY, JSON.stringify(seeded));
+        }
         if (archRaw) setArchives(JSON.parse(archRaw));
-        if (metaRaw) setCaseMeta({ ...defaultCaseMeta(), ...JSON.parse(metaRaw) });
+        if (metaRaw) {
+          setCaseMeta({ ...defaultCaseMeta(), ...JSON.parse(metaRaw) });
+        } else if (SEED_ACTIVITIES.length > 0) {
+          const seededMeta: CaseMeta = { ...defaultCaseMeta(), firstContactDate: SEED_FIRST_CONTACT_DATE };
+          setCaseMeta(seededMeta);
+          await AsyncStorage.setItem(CASE_META_KEY, JSON.stringify(seededMeta));
+        }
       } catch (e) {
         console.warn('Failed to load stored case data', e);
       } finally {
