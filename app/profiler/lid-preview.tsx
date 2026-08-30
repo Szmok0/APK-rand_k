@@ -51,7 +51,11 @@ const THREAT_ZONE = { left: 110, right: 371, top: 758, bottom: 845 };
 // left was 70 — real-device report: text started almost on top of the
 // ruled paper's spiral-bound holes. Measured the actual hole column on a
 // real screenshot and shifted right to clear it with real margin.
-const FIELD_NOTE_ZONE = { left: 108, right: 600, top: 1020, bottom: 1210 };
+// top was 1020 — real-device report: text started in the gap above the
+// card's first real ruled line (measured off the source JPEG at ~1036),
+// under the baked "FIELD NOTE" stamp, instead of sitting on it. Nudged
+// down onto that first line.
+const FIELD_NOTE_ZONE = { left: 108, right: 600, top: 1034, bottom: 1210 };
 const FINAL_REMARK_ZONE = { left: 95, right: 335, top: 1305, bottom: 1400 };
 const BACK_TO_DIARY_HOTSPOT = { left: 470, right: 800, top: 1280, bottom: 1330 };
 const FINAL_REMARK_COVER_COLOR = '#C39A7C';
@@ -245,10 +249,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 17,
   },
+  // Real-device report: overflowed its (narrower than PRIMARY/SECONDARY's)
+  // box for the longest label, "UNEXPLAINED" — sized down with real
+  // headroom for that case, same fix as boxLabel above.
   threatLabel: {
     fontWeight: '700',
-    fontSize: 15,
-    letterSpacing: 1,
+    fontSize: 10,
+    letterSpacing: 0.3,
   },
   fieldNoteText: {
     position: 'absolute',

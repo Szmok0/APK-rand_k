@@ -232,12 +232,19 @@ const styles = StyleSheet.create({
   // enough contrast there in practice. Plain black + bold reads reliably;
   // sized up from what shipped (systemComment +18%, fieldNote +20% — it was
   // reported as "micro" on top of being unreadable).
+  //
+  // Both cards' baked ruled lines run at a slight downward slant left-to-
+  // right (measured off the source JPEG's own line pixels) — real text was
+  // rendered perfectly horizontal on top, so it visibly didn't sit on the
+  // lines. Rotated to match; small enough that a 2-line block doesn't drift
+  // outside its zone.
   systemComment: {
     position: 'absolute',
     color: '#000000',
     fontWeight: '700',
     fontSize: 13,
     lineHeight: 18,
+    transform: [{ rotate: '2deg' }],
   },
   fieldNote: {
     position: 'absolute',
@@ -246,5 +253,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     fontStyle: 'italic',
+    transform: [{ rotate: '2deg' }],
   },
 });

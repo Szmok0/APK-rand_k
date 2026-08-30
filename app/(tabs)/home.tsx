@@ -30,8 +30,8 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
-import React, { useMemo } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -84,8 +84,21 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
   const stats = useMemo(() => computeHomeStats(activities), [activities]);
-  const microStatus = useMemo(() => caseStatus(), []);
-  const quote = useMemo(() => dailyQuote(), []);
+  const [microStatus, setMicroStatus] = useState(caseStatus);
+  const [quote, setQuote] = useState(dailyQuote);
+  // Bottom-tab screens stay mounted when you switch tabs — a plain
+  // useMemo(..., []) only ever picks once, at the very first mount, so
+  // leaving Home and coming back always showed the exact same status line
+  // and quote (found during the pre-handoff audit: looked frozen even
+  // though both pools pick randomly). Re-roll on every focus instead, so
+  // each visit to the tab gets a fresh pick, matching the "should feel
+  // alive" behavior everywhere else this pattern is used.
+  useFocusEffect(
+    useCallback(() => {
+      setMicroStatus(caseStatus());
+      setQuote(dailyQuote());
+    }, [])
+  );
 
   if (loading) return <Screen />;
 
