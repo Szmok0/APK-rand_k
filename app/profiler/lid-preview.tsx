@@ -34,6 +34,11 @@ import { colors, spacing, typography } from '@/theme/tokens';
 const BG_W = 843;
 const BG_H = 1500;
 
+// Real-device report: the stats card's bottom row was covered by the
+// Android system gesture bar — insets.bottom alone wasn't enough (same
+// belt-and-suspenders fallback the tab bar already uses for exactly this).
+const MIN_BOTTOM_SAFE_PAD = 24;
+
 function pct(px: number, of: number): `${number}%` {
   return `${Math.round((px / of) * 1000) / 10}%`;
 }
@@ -43,7 +48,10 @@ function pct(px: number, of: number): `${number}%` {
 const PRIMARY_ZONE = { left: 31, right: 371, top: 362, bottom: 479 };
 const SECONDARY_ZONE = { left: 31, right: 371, top: 572, bottom: 689 };
 const THREAT_ZONE = { left: 110, right: 371, top: 758, bottom: 845 };
-const FIELD_NOTE_ZONE = { left: 70, right: 600, top: 1020, bottom: 1210 };
+// left was 70 — real-device report: text started almost on top of the
+// ruled paper's spiral-bound holes. Measured the actual hole column on a
+// real screenshot and shifted right to clear it with real margin.
+const FIELD_NOTE_ZONE = { left: 108, right: 600, top: 1020, bottom: 1210 };
 const FINAL_REMARK_ZONE = { left: 95, right: 335, top: 1305, bottom: 1400 };
 const BACK_TO_DIARY_HOTSPOT = { left: 470, right: 800, top: 1280, bottom: 1330 };
 const FINAL_REMARK_COVER_COLOR = '#C39A7C';
@@ -173,7 +181,7 @@ export default function TheLidPreviewScreen() {
           </View>
         </Card>
 
-        <View style={{ height: insets.bottom + spacing.xl }} />
+        <View style={{ height: Math.max(insets.bottom, MIN_BOTTOM_SAFE_PAD) + spacing.xl }} />
       </ScrollView>
 
       <Pressable
@@ -214,23 +222,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
+    paddingHorizontal: 8,
   },
+  // Real-device report: the longest archetype labels ("THE GOLDEN
+  // RETRIEVER") overflowed the frame at the sizes these shipped at
+  // (12/20) — sized down with real headroom for that longest case, not
+  // just the shorter name ("THE GENTLEMAN") that happened to fit fine.
   boxLabel: {
     color: colors.textPrimary,
     fontWeight: '700',
-    fontSize: 12,
+    fontSize: 10,
     textAlign: 'center',
   },
   boxLabelMuted: {
     color: colors.textFaint,
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 12,
     letterSpacing: 1,
   },
   boxPercent: {
     color: colors.gold,
     fontWeight: '700',
-    fontSize: 20,
+    fontSize: 17,
   },
   threatLabel: {
     fontWeight: '700',

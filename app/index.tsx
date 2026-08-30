@@ -22,7 +22,11 @@ export default function CoverScreen() {
         resizeMode="cover"
       />
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.xl }]}>
+      {/* Real-device report: the button covered a bit of the poster's own
+          baked tagline text. Pulled it down closer to the bottom edge
+          (insets.bottom already clears the home indicator/gesture area on
+          its own) rather than moving the poster art itself. */}
+      <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.sm }]}>
         <GoldButton label="Open the Case" onPress={() => router.replace('/(tabs)/home')} />
       </View>
     </View>

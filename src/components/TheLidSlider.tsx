@@ -68,8 +68,25 @@ export function TheLidSlider({ value, onChange, onChangeEnd }: Props) {
   onChangeRef.current = onChange;
   onChangeEndRef.current = onChangeEnd;
 
+  // Real-device report: the pointer "jumped wherever" instead of tracking
+  // the finger. Root cause — this used to read evt.nativeEvent.locationX,
+  // which is relative to whichever view the OS thinks currently owns the
+  // touch; because this responder is only GRANTED partway through the
+  // gesture (on purpose, so a vertical scroll starting on a slider row
+  // still works), locationX's reference point could shift between grant
+  // and the following move events, reading as a jump. gestureState.moveX
+  // is the touch's ABSOLUTE screen position instead, tracked consistently
+  // for the whole gesture — subtracting this view's own measured screen
+  // position (via measureInWindow, captured on layout) gives a relative X
+  // that never has that discontinuity.
+  const viewRef = useRef<View>(null);
+  const pageXRef = useRef(0);
+
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     setWidth(e.nativeEvent.layout.width);
+    viewRef.current?.measureInWindow((x) => {
+      pageXRef.current = x;
+    });
   }, []);
 
   const panResponder = useMemo(
@@ -85,17 +102,17 @@ export function TheLidSlider({ value, onChange, onChangeEnd }: Props) {
           Math.abs(gesture.dx) > CLAIM_THRESHOLD && Math.abs(gesture.dx) > Math.abs(gesture.dy),
         onMoveShouldSetPanResponderCapture: (_evt, gesture) =>
           Math.abs(gesture.dx) > CLAIM_THRESHOLD && Math.abs(gesture.dx) > Math.abs(gesture.dy),
-        onPanResponderGrant: (evt) => {
-          onChangeRef.current(valueFromX(evt.nativeEvent.locationX, widthRef.current));
+        onPanResponderGrant: (_evt, gesture) => {
+          onChangeRef.current(valueFromX(gesture.moveX - pageXRef.current, widthRef.current));
         },
-        onPanResponderMove: (evt) => {
-          onChangeRef.current(valueFromX(evt.nativeEvent.locationX, widthRef.current));
+        onPanResponderMove: (_evt, gesture) => {
+          onChangeRef.current(valueFromX(gesture.moveX - pageXRef.current, widthRef.current));
         },
-        onPanResponderRelease: (evt) => {
-          onChangeEndRef.current(valueFromX(evt.nativeEvent.locationX, widthRef.current));
+        onPanResponderRelease: (_evt, gesture) => {
+          onChangeEndRef.current(valueFromX(gesture.moveX - pageXRef.current, widthRef.current));
         },
-        onPanResponderTerminate: (evt) => {
-          onChangeEndRef.current(valueFromX(evt.nativeEvent.locationX, widthRef.current));
+        onPanResponderTerminate: (_evt, gesture) => {
+          onChangeEndRef.current(valueFromX(gesture.moveX - pageXRef.current, widthRef.current));
         },
       }),
     []
@@ -104,7 +121,7 @@ export function TheLidSlider({ value, onChange, onChangeEnd }: Props) {
   const pointerCenterX = width > 0 ? ((value - 1) / 4) * width : 0;
 
   return (
-    <View style={styles.hitArea} onLayout={onLayout} {...panResponder.panHandlers}>
+    <View ref={viewRef} style={styles.hitArea} onLayout={onLayout} {...panResponder.panHandlers}>
       {width > 0 && (
         <Image
           source={require('../../assets/noir/profiler/lid_pointer.png')}

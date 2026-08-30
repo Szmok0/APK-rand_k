@@ -39,6 +39,11 @@ const TRACK_RIGHT = 671;
 const ROW_Y = [346, 465, 585, 708, 830, 953, 1072, 1190, 1306];
 const SLIDER_HALF_HEIGHT = 26;
 
+// Same belt-and-suspenders fallback as THE LID PREVIEW / the tab bar —
+// insets.bottom alone has been observed too small for Android's gesture
+// bar on a real device.
+const MIN_BOTTOM_SAFE_PAD = 24;
+
 // The baked example description sits here for every row (verified on row 1:
 // text bbox was x[718,807] y[341,366]). The available width is narrow
 // (~64px on a real device) — real descriptions can wrap up to 3 lines even
@@ -161,7 +166,7 @@ export default function TheLidScreen() {
           <Ionicons name="chevron-forward" size={16} color={colors.background} />
         </Pressable>
 
-        <View style={{ height: insets.bottom + spacing.xl }} />
+        <View style={{ height: Math.max(insets.bottom, MIN_BOTTOM_SAFE_PAD) + spacing.xl }} />
       </ScrollView>
 
       <Pressable
