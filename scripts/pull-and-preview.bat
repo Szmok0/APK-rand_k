@@ -27,7 +27,18 @@ echo === Now on commit: ===
 git log -1 --oneline
 
 echo.
-echo === [3/3] Starting Expo (press w for web, scan the QR for Expo Go) ===
+echo === [3/4] Installing dependencies exactly as locked (npm ci) ===
+REM Plain "npm install" can let a package (react-dom here, once) drift to a
+REM slightly different version than what's actually committed in
+REM package-lock.json, causing an "Incompatible React versions" crash on
+REM the web preview even though the repo itself is pinned correctly. npm ci
+REM wipes node_modules and installs strictly from the lockfile every time,
+REM so this can't happen no matter what got installed locally before.
+call npm ci
+if errorlevel 1 goto :error
+
+echo.
+echo === [4/4] Starting Expo (press w for web, scan the QR for Expo Go) ===
 npx expo start
 goto :end
 
