@@ -25,8 +25,6 @@ import {
   Alert,
   Image,
   LayoutChangeEvent,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -106,15 +104,21 @@ export default function DayDetailScreen() {
   // one hardcoded line instead of rotating between the pool's 2 options.
   const noteEmptyState = useMemo(() => emptyStateFor('EVIDENCE / NO TEXT NOTE'), []);
 
-  // Which of the activity's photos the frame's carousel is currently
-  // showing (multi-photo support — was a single fixed photoUri). Reset
-  // whenever the day changes so a new activity never opens mid-carousel.
+  // Which of the activity's photos the frame is currently showing (multi-
+  // photo support — was a single fixed photoUri). Reset whenever the day
+  // changes so a new activity never opens mid-cycle. Was a swipeable
+  // ScrollView (pagingEnabled) — real-usage report (web): swiping never
+  // reliably advanced past the first photo. Explicit prev/next arrows sidestep
+  // relying on drag/swipe gesture support entirely — a tap always works,
+  // on every platform, and was the product owner's own preferred fallback.
   const photoUris = activity?.photoUris ?? [];
   const [photoIndex, setPhotoIndex] = useState(0);
   useEffect(() => setPhotoIndex(0), [date]);
-  function onPhotoScrollEnd(e: NativeSyntheticEvent<NativeScrollEvent>) {
-    const width = photoPriorityLayout.photoWidth;
-    if (width > 0) setPhotoIndex(Math.round(e.nativeEvent.contentOffset.x / width));
+  function showPrevPhoto() {
+    setPhotoIndex((i) => (i - 1 + photoUris.length) % photoUris.length);
+  }
+  function showNextPhoto() {
+    setPhotoIndex((i) => (i + 1) % photoUris.length);
   }
 
   // Photo frame is 70% of the FULL row width (product owner spec, in those
@@ -306,47 +310,18 @@ export default function DayDetailScreen() {
                   ]}
                 >
                   {photoUris.length > 0 ? (
-                    // Was a single Image here (one photoUri) — multiple
-                    // photos now page through the same fixed frame instead
-                    // of needing a whole new layout, with dots below
-                    // showing which one of how many is on screen. Each page
-                    // is exactly one frame wide (for pagingEnabled to snap
-                    // correctly); the inset image inside it reuses
-                    // photoInner's original percentages, just resolved to
-                    // pixels since a ScrollView page's own percentage sizing
-                    // can't be trusted to resolve against its scroll content.
-                    <ScrollView
-                      horizontal
-                      pagingEnabled
-                      showsHorizontalScrollIndicator={false}
-                      onMomentumScrollEnd={onPhotoScrollEnd}
+                    <Image
+                      key={photoUris[photoIndex]}
+                      source={{ uri: photoUris[photoIndex] }}
                       style={{
                         position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: photoPriorityLayout.photoWidth,
-                        height: photoPriorityLayout.photoHeight,
+                        left: photoPriorityLayout.photoWidth * 0.04,
+                        top: photoPriorityLayout.photoHeight * 0.05,
+                        width: photoPriorityLayout.photoWidth * 0.92,
+                        height: photoPriorityLayout.photoHeight * 0.87,
+                        borderRadius: 2,
                       }}
-                    >
-                      {photoUris.map((uri) => (
-                        <View
-                          key={uri}
-                          style={{ width: photoPriorityLayout.photoWidth, height: photoPriorityLayout.photoHeight }}
-                        >
-                          <Image
-                            source={{ uri }}
-                            style={{
-                              position: 'absolute',
-                              left: photoPriorityLayout.photoWidth * 0.04,
-                              top: photoPriorityLayout.photoHeight * 0.05,
-                              width: photoPriorityLayout.photoWidth * 0.92,
-                              height: photoPriorityLayout.photoHeight * 0.87,
-                              borderRadius: 2,
-                            }}
-                          />
-                        </View>
-                      ))}
-                    </ScrollView>
+                    />
                   ) : (
                     <View style={styles.photoEmptySlot}>
                       <Ionicons name="image-outline" size={22} color={colors.textFaint} />
@@ -357,11 +332,19 @@ export default function DayDetailScreen() {
                     style={styles.photoFrameArt}
                   />
                   {photoUris.length > 1 && (
-                    <View style={styles.photoDotsRow} pointerEvents="none">
-                      {photoUris.map((uri, i) => (
-                        <View key={uri} style={[styles.photoDot, i === photoIndex && styles.photoDotActive]} />
-                      ))}
-                    </View>
+                    <>
+                      <Pressable style={styles.photoArrowLeft} onPress={showPrevPhoto} hitSlop={8}>
+                        <Ionicons name="chevron-back" size={16} color={colors.textPrimary} />
+                      </Pressable>
+                      <Pressable style={styles.photoArrowRight} onPress={showNextPhoto} hitSlop={8}>
+                        <Ionicons name="chevron-forward" size={16} color={colors.textPrimary} />
+                      </Pressable>
+                      <View style={styles.photoDotsRow} pointerEvents="none">
+                        {photoUris.map((uri, i) => (
+                          <View key={uri} style={[styles.photoDot, i === photoIndex && styles.photoDotActive]} />
+                        ))}
+                      </View>
+                    </>
                   )}
                 </View>
                 {activity.importance > 0 && (
@@ -686,6 +669,30 @@ const styles = StyleSheet.create({
     left: 0,
     width: '100%',
     height: '100%',
+  },
+  photoArrowLeft: {
+    position: 'absolute',
+    left: 6,
+    top: '50%',
+    marginTop: -14,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(12, 10, 8, 0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoArrowRight: {
+    position: 'absolute',
+    right: 6,
+    top: '50%',
+    marginTop: -14,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(12, 10, 8, 0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   photoDotsRow: {
     position: 'absolute',

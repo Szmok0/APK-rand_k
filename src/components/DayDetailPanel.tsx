@@ -9,21 +9,25 @@
 // always won the touch), so any note longer than the card's fixed height
 // was simply unreachable — this sidesteps that instead of re-fighting it.
 //
-// Photo row: real-usage report — a real photo IS meant to show here (this
-// is the primary place the product owner and a real gift-build tester
+// Photo frame: real-usage report — a real photo IS meant to show here, big
+// and prominent (this is the primary place a real gift-build tester
 // actually looked at photos day-to-day, tapping a day straight off the
-// Calendar grid). No baked frame asset exists for this compact context
-// (unlike the full Day Detail screen's photo_frame.png), so plain bordered
-// squares — same "no matching asset, use a plain code-styled tile" pattern
-// already used for Add Activity's extra photo slots and the LID PREVIEW
-// stats card. Shows every real photo (not a type-photo fallback — this is
-// the one place besides Day Detail's own frame where the user's own photo
-// is meant to be visible, per the product owner's explicit correction).
+// Calendar grid — product owner: "wstaw normalną ramkę, jest masa
+// miejsca"). No baked frame asset exists for this compact context (unlike
+// the full Day Detail screen's photo_frame.png), so a plain bordered box —
+// same "no matching asset, use a plain code-styled tile" pattern already
+// used for the LID PREVIEW stats card. Shows every real photo (not a
+// type-photo fallback — this is one of the two places, alongside Day
+// Detail's own frame, where the user's own photo is meant to be visible;
+// Evidence's list thumbnail stays type-photo-only). Multiple photos cycle
+// via explicit prev/next arrows, not a swipeable ScrollView — swiping
+// never reliably advanced past the first photo in real-usage testing (web);
+// a tap always works, on every platform.
 
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useMemo } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { GoldButton } from '@/components/ui';
 import { DAY_BADGE_COLORS, DAY_BADGE_ICON_NAMES, dayBadges } from '@/engine/dayBadges';
@@ -52,6 +56,18 @@ export function DayDetailPanel({ date }: Props) {
   // one hardcoded line instead of rotating between the pool's 2 options.
   const noteEmptyState = useMemo(() => emptyStateFor('EVIDENCE / NO TEXT NOTE'), [date]);
 
+  // Which of the activity's photos the frame is currently showing. Reset
+  // whenever the day changes so a new activity never opens mid-cycle.
+  const photoUris = activity?.photoUris ?? [];
+  const [photoIndex, setPhotoIndex] = useState(0);
+  useEffect(() => setPhotoIndex(0), [date]);
+  function showPrevPhoto() {
+    setPhotoIndex((i) => (i - 1 + photoUris.length) % photoUris.length);
+  }
+  function showNextPhoto() {
+    setPhotoIndex((i) => (i + 1) % photoUris.length);
+  }
+
   function handleDelete() {
     if (!activity) return;
     Alert.alert('Remove this incident?', 'History will not argue. This cannot be undone.', [
@@ -67,7 +83,7 @@ export function DayDetailPanel({ date }: Props) {
   async function handleShare() {
     if (!activity) return;
     const canShare = await Sharing.isAvailableAsync();
-    const uri = activity.photoUris?.[0];
+    const uri = photoUris[photoIndex] ?? photoUris[0];
     if (uri && canShare) {
       await Sharing.shareAsync(uri);
     } else {
@@ -108,17 +124,30 @@ export function DayDetailPanel({ date }: Props) {
         </View>
       )}
 
-      {!!activity.photoUris?.length && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.photoRow}
-          contentContainerStyle={styles.photoRowContent}
-        >
-          {activity.photoUris.map((uri) => (
-            <Image key={uri} source={{ uri }} style={styles.photoThumb} resizeMode="cover" />
-          ))}
-        </ScrollView>
+      {photoUris.length > 0 && (
+        <View style={styles.photoFrame}>
+          <Image
+            key={photoUris[photoIndex]}
+            source={{ uri: photoUris[photoIndex] }}
+            style={styles.photoFrameImage}
+            resizeMode="cover"
+          />
+          {photoUris.length > 1 && (
+            <>
+              <Pressable style={styles.photoArrowLeft} onPress={showPrevPhoto} hitSlop={8}>
+                <Ionicons name="chevron-back" size={16} color={colors.textPrimary} />
+              </Pressable>
+              <Pressable style={styles.photoArrowRight} onPress={showNextPhoto} hitSlop={8}>
+                <Ionicons name="chevron-forward" size={16} color={colors.textPrimary} />
+              </Pressable>
+              <View style={styles.photoDotsRow} pointerEvents="none">
+                {photoUris.map((uri, i) => (
+                  <View key={uri} style={[styles.photoDot, i === photoIndex && styles.photoDotActive]} />
+                ))}
+              </View>
+            </>
+          )}
+        </View>
       )}
 
       <View style={styles.readoutRowCode}>
@@ -225,18 +254,62 @@ const styles = StyleSheet.create({
     marginTop: 3,
     textAlign: 'center',
   },
-  photoRow: {
+  // Big and prominent on purpose ("wstaw normalną ramkę, jest masa
+  // miejsca") — a real photo frame, not a row of small thumbnails.
+  photoFrame: {
     marginTop: spacing.sm,
-  },
-  photoRowContent: {
-    gap: spacing.xs,
-  },
-  photoThumb: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.sm,
+    width: '100%',
+    aspectRatio: 4 / 3,
+    borderRadius: radius.md,
     borderWidth: 1.5,
     borderColor: colors.borderStrong,
+    backgroundColor: colors.surfaceAlt,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  photoFrameImage: {
+    width: '100%',
+    height: '100%',
+  },
+  photoArrowLeft: {
+    position: 'absolute',
+    left: 6,
+    top: '50%',
+    marginTop: -14,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(12, 10, 8, 0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoArrowRight: {
+    position: 'absolute',
+    right: 6,
+    top: '50%',
+    marginTop: -14,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(12, 10, 8, 0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoDotsRow: {
+    position: 'absolute',
+    bottom: 6,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    gap: 4,
+  },
+  photoDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: 'rgba(241, 231, 210, 0.4)',
+  },
+  photoDotActive: {
+    backgroundColor: colors.gold,
   },
   readoutRowCode: {
     flexDirection: 'row',
