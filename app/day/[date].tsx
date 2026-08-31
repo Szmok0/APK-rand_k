@@ -320,7 +320,13 @@ export default function DayDetailScreen() {
                       pagingEnabled
                       showsHorizontalScrollIndicator={false}
                       onMomentumScrollEnd={onPhotoScrollEnd}
-                      style={{ width: photoPriorityLayout.photoWidth, height: photoPriorityLayout.photoHeight }}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: photoPriorityLayout.photoWidth,
+                        height: photoPriorityLayout.photoHeight,
+                      }}
                     >
                       {photoUris.map((uri) => (
                         <View
@@ -666,7 +672,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Real bug, found on a real device: this had no explicit position, and
+  // only "worked" by accident because its only sibling (photoInner /
+  // photoEmptySlot) was itself absolute, leaving this the sole item in
+  // normal flow — sized 100%/100% of a relative parent, which happens to
+  // look like a correct overlay. Adding the photo carousel (also non-
+  // absolute) broke that accident: two flow siblings stacked vertically
+  // instead of overlapping, pushing this frame down and out of view.
+  // Absolute here is the actual fix, not dependent on sibling count/order.
   photoFrameArt: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
     width: '100%',
     height: '100%',
   },
