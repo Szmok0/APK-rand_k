@@ -31,6 +31,7 @@ import { MAX_PHOTOS_PER_ACTIVITY } from '@/engine/photos';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, priorityColors, priorityLabels, radius, spacing, typography } from '@/theme/tokens';
 import { dateLabelFull, todayKey } from '@/utils/dates';
+import { persistPickedPhoto } from '@/utils/photoStorage';
 
 const NOTE_MAX = 1000;
 
@@ -96,7 +97,11 @@ export default function AddActivityScreen() {
       selectionLimit: remaining,
     });
     if (!result.canceled && result.assets.length > 0) {
-      setPhotoUris((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_PHOTOS_PER_ACTIVITY));
+      // Copied into the app's permanent storage right away — the picker's
+      // own uri lives in a cache directory Android is allowed to sweep (see
+      // persistPickedPhoto's header comment).
+      const persisted = await Promise.all(result.assets.map((a) => persistPickedPhoto(a.uri)));
+      setPhotoUris((prev) => [...prev, ...persisted].slice(0, MAX_PHOTOS_PER_ACTIVITY));
     }
   }
 

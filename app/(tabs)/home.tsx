@@ -41,6 +41,7 @@ import { dailyQuote } from '@/engine/quote';
 import { computeHomeStats } from '@/engine/summary';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, fonts } from '@/theme/tokens';
+import { persistPickedPhoto } from '@/utils/photoStorage';
 
 // Exact pixel size of assets/noir/home/home_bg.jpg — keep in sync if it's
 // ever re-cropped.
@@ -114,7 +115,11 @@ export default function HomeScreen() {
     if (!perm.granted) return;
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
     if (!result.canceled && result.assets[0]) {
-      updateCaseMeta({ profilePhotoUri: result.assets[0].uri });
+      // Copied into permanent storage right away — same fix as Add
+      // Activity's photos (see persistPickedPhoto's header comment): the
+      // picker's own uri lives in a cache directory Android can sweep.
+      const uri = await persistPickedPhoto(result.assets[0].uri);
+      updateCaseMeta({ profilePhotoUri: uri });
     }
   }
 
