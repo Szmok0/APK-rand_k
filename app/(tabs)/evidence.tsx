@@ -35,11 +35,14 @@
 // Card redesign (real-usage feedback, second pass): the parchment "dossier
 // card" list frame read as visually disconnected from the rest of the
 // app's pure-dark chrome — rebuilt per the product owner's own dark
-// concept mockup. Real photo does the visual work now (thumbnailFor()
-// below): the activity's own photo first, then a per-glyph "type photo"
-// (src/data/evidencePhotos.ts, 29 real photos covering every MEETINGS/
-// OBJECTS glyph), then an enlarged glyph icon as the last resort for
-// glyph types a literal photo doesn't suit (Contact/Dating/Emotion).
+// concept mockup. A stable per-glyph "type photo" does the visual work now
+// (thumbnailFor() below, src/data/evidencePhotos.ts — 29 real photos
+// covering every MEETINGS/OBJECTS glyph), falling back to an enlarged
+// glyph icon for glyph types a literal photo doesn't suit (Contact/Dating/
+// Emotion). The user's own uploaded photo is deliberately NEVER the
+// thumbnail here — product owner: "an added photo should only ever
+// display in the [Day Detail] frame, nowhere else" — the ×N badge still
+// reflects the real count, just not which image renders.
 // Headline is the primary glyph's real name (+ duration if a time window
 // exists) — not an invented narrative headline; the second tag is CASE
 // PRIORITY, the one thing on an Activity that isn't already shown by the
@@ -221,12 +224,14 @@ function StatCard({
   );
 }
 
-// Real user photo always wins; only falls back to a type-photo (or, for
-// glyph categories with no type-photo at all — Contact/Dating/Emotion —
-// an enlarged glyph icon) when the activity has none of its own. See
-// src/data/evidencePhotos.ts for what's covered and why.
+// The user's own uploaded photo is intentionally NEVER shown here — product
+// owner: "an added photo should only ever display in the [Day Detail]
+// frame, nowhere else." Evidence's thumbnail is a stable per-activity-type
+// visual (src/data/evidencePhotos.ts), falling back to an enlarged glyph
+// icon for the categories with no type-photo (Contact/Dating/Emotion). The
+// ×N badge below still reflects the real photo count — this only concerns
+// which image renders as the thumbnail.
 function thumbnailFor(exhibit: Exhibit): { kind: 'photo'; source: any } | { kind: 'icon'; glyphId: string } | null {
-  if (exhibit.photoUris?.[0]) return { kind: 'photo', source: { uri: exhibit.photoUris[0] } };
   for (const id of exhibit.glyphIds) {
     if (TYPE_PHOTOS[id]) return { kind: 'photo', source: TYPE_PHOTOS[id] };
   }
