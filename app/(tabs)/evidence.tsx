@@ -268,6 +268,14 @@ function ExhibitCard({
             <Ionicons name="folder-outline" size={28} color={colors.textFaint} />
           </View>
         )}
+        {/* Was dropped during the redesign, restored per real-usage report:
+            with no count visible here, "did the multi-photo save actually
+            work" was only checkable by opening the full Day Detail screen. */}
+        {exhibit.photoUris && exhibit.photoUris.length > 1 && (
+          <View style={styles.thumbnailCountBadge}>
+            <Text style={styles.thumbnailCountText}>×{exhibit.photoUris.length}</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.cardContent}>
@@ -523,6 +531,20 @@ const styles = StyleSheet.create({
   thumbnailIcon: {
     width: '60%',
     height: '60%',
+  },
+  thumbnailCountBadge: {
+    position: 'absolute',
+    right: 4,
+    bottom: 4,
+    backgroundColor: 'rgba(12, 10, 8, 0.75)',
+    borderRadius: radius.sm,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+  },
+  thumbnailCountText: {
+    color: colors.textPrimary,
+    fontSize: 9,
+    fontWeight: '700',
   },
   cardContent: {
     flex: 1,
