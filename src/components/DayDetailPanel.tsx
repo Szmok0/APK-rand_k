@@ -1,18 +1,29 @@
 // "Case Day" content — the inline Calendar preview panel (product owner spec,
 // Aug 2026): bordered-square badge icons, code-drawn TIME/EVIDENCE boxes side
-// by side, and a compact REPORT card — no glyph list, priority badge or photo
-// (no room left, see app/day/[date].tsx for the full-screen version of a day).
-// REPORT no longer scrolls its note inline: it's a Pressable that opens the
-// note in its own full screen (app/note/[date].tsx). A nested ScrollView here
-// never registered scroll gestures on a real Android device (the outer
-// Calendar screen's scroll always won the touch), so any note longer than the
-// card's fixed height was simply unreachable — this sidesteps that instead of
-// re-fighting it.
+// by side, a compact photo row, and a compact REPORT card — no glyph list or
+// priority badge (no room left, see app/day/[date].tsx for the full-screen
+// version of a day with those). REPORT no longer scrolls its note inline:
+// it's a Pressable that opens the note in its own full screen
+// (app/note/[date].tsx). A nested ScrollView here never registered scroll
+// gestures on a real Android device (the outer Calendar screen's scroll
+// always won the touch), so any note longer than the card's fixed height
+// was simply unreachable — this sidesteps that instead of re-fighting it.
+//
+// Photo row: real-usage report — a real photo IS meant to show here (this
+// is the primary place the product owner and a real gift-build tester
+// actually looked at photos day-to-day, tapping a day straight off the
+// Calendar grid). No baked frame asset exists for this compact context
+// (unlike the full Day Detail screen's photo_frame.png), so plain bordered
+// squares — same "no matching asset, use a plain code-styled tile" pattern
+// already used for Add Activity's extra photo slots and the LID PREVIEW
+// stats card. Shows every real photo (not a type-photo fallback — this is
+// the one place besides Day Detail's own frame where the user's own photo
+// is meant to be visible, per the product owner's explicit correction).
 
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useMemo } from 'react';
-import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { GoldButton } from '@/components/ui';
 import { DAY_BADGE_COLORS, DAY_BADGE_ICON_NAMES, dayBadges } from '@/engine/dayBadges';
@@ -95,6 +106,19 @@ export function DayDetailPanel({ date }: Props) {
             </View>
           ))}
         </View>
+      )}
+
+      {!!activity.photoUris?.length && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.photoRow}
+          contentContainerStyle={styles.photoRowContent}
+        >
+          {activity.photoUris.map((uri) => (
+            <Image key={uri} source={{ uri }} style={styles.photoThumb} resizeMode="cover" />
+          ))}
+        </ScrollView>
       )}
 
       <View style={styles.readoutRowCode}>
@@ -200,6 +224,19 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginTop: 3,
     textAlign: 'center',
+  },
+  photoRow: {
+    marginTop: spacing.sm,
+  },
+  photoRowContent: {
+    gap: spacing.xs,
+  },
+  photoThumb: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.sm,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
   },
   readoutRowCode: {
     flexDirection: 'row',
