@@ -76,6 +76,10 @@ export type Exhibit = {
   photoUris?: string[];
   importance: 0 | 1 | 2;
   favorite?: boolean;
+  // Card-redesign addition (Evidence Archive dark rebuild): only used for
+  // the headline's optional "· Nh" duration suffix.
+  startTime?: string;
+  endTime?: string;
 };
 
 // Archive — closed-case file (same schema as export, section below).

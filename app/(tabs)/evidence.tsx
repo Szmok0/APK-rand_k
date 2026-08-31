@@ -4,9 +4,8 @@
 // Activity[] the rest of the app already uses (src/engine/evidence.ts).
 //
 // Visual pass rebuilt against the product owner's reference screen + asset
-// pack (Aug 2026) — real background (room_bg.jpg), dossier-card list frame
-// (dossier_card.png, the real torn-paper+paperclip asset), a CONFIDENTIAL
-// stamp, and the 4 category icons (folder/photo/note/star) — with several
+// pack (Aug 2026) — real background (room_bg.jpg), a CONFIDENTIAL stamp,
+// and the 4 category icons (folder/photo/note/star) — with several
 // adaptations flagged where the reference conflicted with product rules:
 //
 // - The reference's "section_header.png"/"search_bar.png" assets have Polish
@@ -32,6 +31,19 @@
 //   fake screen-local checkbox.
 // - The reference's search bar is a real feature here too: a plain substring
 //   filter over note text + incident-type names (no fabricated data needed).
+//
+// Card redesign (real-usage feedback, second pass): the parchment "dossier
+// card" list frame read as visually disconnected from the rest of the
+// app's pure-dark chrome — rebuilt per the product owner's own dark
+// concept mockup. Real photo does the visual work now (thumbnailFor()
+// below): the activity's own photo first, then a per-glyph "type photo"
+// (src/data/evidencePhotos.ts, 29 real photos covering every MEETINGS/
+// OBJECTS glyph), then an enlarged glyph icon as the last resort for
+// glyph types a literal photo doesn't suit (Contact/Dating/Emotion).
+// Headline is the primary glyph's real name (+ duration if a time window
+// exists) — not an invented narrative headline; the second tag is CASE
+// PRIORITY, the one thing on an Activity that isn't already shown by the
+// first (badge-type) tag.
 
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -40,14 +52,16 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GLYPH_MAP } from '@/data/glyphs';
-import { DAY_BADGE_COLORS, DAY_BADGE_ICON_NAMES, dayBadges } from '@/engine/dayBadges';
+import { TYPE_PHOTOS } from '@/data/evidencePhotos';
+import { GlyphIcon } from '@/components/GlyphIcon';
+import { DAY_BADGE_COLORS, dayBadges } from '@/engine/dayBadges';
 import { Screen } from '@/components/ui';
 import { emptyStateFor } from '@/engine/emptyState';
 import { buildEvidenceArchive, exhibitLabel, filterExhibits, sortExhibits } from '@/engine/evidence';
 import { useRelationship } from '@/store/RelationshipStore';
-import { colors, radius, spacing, typography } from '@/theme/tokens';
+import { colors, priorityColors, priorityLabels, radius, spacing, typography } from '@/theme/tokens';
 import type { Exhibit, ExhibitFilter } from '@/types/models';
-import { dateLabelUpper } from '@/utils/dates';
+import { dateLabelUpper, durationHours } from '@/utils/dates';
 
 const FILTERS: ExhibitFilter[] = ['ALL', 'MEETINGS', 'MESSAGES', 'ITEMS', 'EMOTIONS', 'INCIDENTS'];
 
@@ -207,6 +221,18 @@ function StatCard({
   );
 }
 
+// Real user photo always wins; only falls back to a type-photo (or, for
+// glyph categories with no type-photo at all — Contact/Dating/Emotion —
+// an enlarged glyph icon) when the activity has none of its own. See
+// src/data/evidencePhotos.ts for what's covered and why.
+function thumbnailFor(exhibit: Exhibit): { kind: 'photo'; source: any } | { kind: 'icon'; glyphId: string } | null {
+  if (exhibit.photoUris?.[0]) return { kind: 'photo', source: { uri: exhibit.photoUris[0] } };
+  for (const id of exhibit.glyphIds) {
+    if (TYPE_PHOTOS[id]) return { kind: 'photo', source: TYPE_PHOTOS[id] };
+  }
+  return exhibit.glyphIds[0] ? { kind: 'icon', glyphId: exhibit.glyphIds[0] } : null;
+}
+
 function ExhibitCard({
   exhibit,
   onToggleFavorite,
@@ -219,46 +245,70 @@ function ExhibitCard({
   // instead of inventing a second taxonomy for the archive.
   const badges = dayBadges(exhibit);
   const badge = badges[0];
+  const thumbnail = thumbnailFor(exhibit);
+
+  const primaryGlyphName = GLYPH_MAP[exhibit.glyphIds[0]]?.name?.toUpperCase() ?? 'UNTITLED ENTRY';
+  const hours = exhibit.startTime && exhibit.endTime ? durationHours(exhibit.startTime, exhibit.endTime) : 0;
+  const headline = hours > 0 ? `${primaryGlyphName} · ${hours}H` : primaryGlyphName;
 
   return (
     <Pressable
       style={styles.card}
       onPress={() => router.push({ pathname: '/day/[date]', params: { date: exhibit.date } })}
     >
-      <Image
-        source={require('../../assets/noir/evidence/dossier_card.png')}
-        style={[StyleSheet.absoluteFill, styles.cardFrame]}
-        resizeMode="stretch"
-      />
+      <View style={styles.thumbnailWrap}>
+        {thumbnail?.kind === 'photo' ? (
+          <Image source={thumbnail.source} style={styles.thumbnailImage} resizeMode="cover" />
+        ) : thumbnail?.kind === 'icon' ? (
+          <View style={styles.thumbnailIconWrap}>
+            <GlyphIcon glyphId={thumbnail.glyphId} style={styles.thumbnailIcon} />
+          </View>
+        ) : (
+          <View style={styles.thumbnailIconWrap}>
+            <Ionicons name="folder-outline" size={28} color={colors.textFaint} />
+          </View>
+        )}
+      </View>
+
       <View style={styles.cardContent}>
         <View style={styles.cardHeaderRow}>
           <Text style={styles.exhibitNumber}>{exhibitLabel(exhibit.number)}</Text>
+          <Text style={styles.exhibitDate}>{dateLabelUpper(exhibit.date)}</Text>
+        </View>
+
+        <Text style={styles.cardTitle} numberOfLines={1}>
+          {headline}
+        </Text>
+        {!!exhibit.note && (
+          <Text style={styles.cardDescription} numberOfLines={2}>
+            {exhibit.note}
+          </Text>
+        )}
+
+        <View style={styles.cardFooterRow}>
+          <View style={styles.tagRow}>
+            {badge && (
+              <View style={[styles.tagPill, { borderColor: DAY_BADGE_COLORS[badge] }]}>
+                <Text style={[styles.tagPillLabel, { color: DAY_BADGE_COLORS[badge] }]}>{badge}</Text>
+              </View>
+            )}
+            <View style={[styles.tagPill, { borderColor: priorityColors[exhibit.importance] }]}>
+              <Text style={[styles.tagPillLabel, { color: priorityColors[exhibit.importance] }]}>
+                {priorityLabels[exhibit.importance]}
+              </Text>
+            </View>
+          </View>
           <Pressable hitSlop={10} onPress={onToggleFavorite}>
             <Ionicons
               name={exhibit.favorite ? 'star' : 'star-outline'}
-              size={18}
-              color={exhibit.favorite ? colors.gold : colors.textOnPaper}
+              size={16}
+              color={exhibit.favorite ? colors.gold : colors.textFaint}
             />
           </Pressable>
         </View>
-
-        <Text style={styles.cardTitle} numberOfLines={2}>
-          {exhibit.note || exhibit.glyphIds.map((id) => GLYPH_MAP[id]?.name).join(' + ') || 'Untitled entry'}
-        </Text>
-
-        <View style={styles.cardFooterRow}>
-          <Text style={styles.exhibitDate}>
-            {dateLabelUpper(exhibit.date)}
-            {exhibit.photoUris?.length ? `  •  📷${exhibit.photoUris.length > 1 ? `×${exhibit.photoUris.length}` : ''}` : ''}
-          </Text>
-          {badge && (
-            <View style={[styles.tagPill, { borderColor: DAY_BADGE_COLORS[badge] }]}>
-              <Ionicons name={DAY_BADGE_ICON_NAMES[badge]} size={11} color={DAY_BADGE_COLORS[badge]} />
-              <Text style={[styles.tagPillLabel, { color: DAY_BADGE_COLORS[badge] }]}>{badge}</Text>
-            </View>
-          )}
-        </View>
       </View>
+
+      <Ionicons name="chevron-forward" size={16} color={colors.textFaint} style={styles.cardChevron} />
     </Pressable>
   );
 }
@@ -437,35 +487,69 @@ const styles = StyleSheet.create({
   list: {
     gap: spacing.md,
   },
-  // See app/index.tsx — StyleSheet.absoluteFill alone doesn't stretch an Image
-  // correctly on React Native Web without an explicit 100%/100% too.
-  cardFrame: {
+  // Was a parchment "dossier card" image frame (dossier_card.png) — real-
+  // usage feedback: it read as visually disconnected from the rest of the
+  // app's pure-dark chrome. Rebuilt as a plain dark card matching every
+  // other surface in the app (statCard/searchBar above), with a real photo
+  // thumbnail doing the work the paper texture used to.
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    minHeight: 100,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+  },
+  thumbnailWrap: {
+    width: 72,
+    height: 92,
+    borderRadius: radius.sm,
+    overflow: 'hidden',
+    backgroundColor: colors.surfaceAlt,
+  },
+  thumbnailImage: {
     width: '100%',
     height: '100%',
   },
-  card: {
-    minHeight: 100,
-    borderRadius: radius.md,
-    overflow: 'hidden',
+  thumbnailIconWrap: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  thumbnailIcon: {
+    width: '60%',
+    height: '60%',
   },
   cardContent: {
-    padding: spacing.md,
+    flex: 1,
   },
   cardHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: 2,
   },
   exhibitNumber: {
     ...typography.stamp,
-    color: colors.textOnPaper,
+    color: colors.red,
     fontSize: 11,
+    letterSpacing: 1,
   },
   cardTitle: {
-    color: colors.textOnPaper,
-    fontSize: 13,
-    fontWeight: '600',
+    ...typography.stamp,
+    color: colors.textPrimary,
+    fontSize: 15,
+    letterSpacing: 0.5,
+  },
+  cardDescription: {
+    color: colors.textSecondary,
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 2,
   },
   cardFooterRow: {
     flexDirection: 'row',
@@ -473,15 +557,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: spacing.xs,
   },
+  tagRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
   exhibitDate: {
-    color: colors.textOnPaper,
-    fontSize: 11,
-    opacity: 0.65,
+    color: colors.textFaint,
+    fontSize: 10,
   },
   tagPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
     borderWidth: 1,
     borderRadius: radius.sm,
     paddingHorizontal: 6,
@@ -491,6 +575,9 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.5,
+  },
+  cardChevron: {
+    marginLeft: spacing.xs,
   },
   addBtn: {
     flexDirection: 'row',
