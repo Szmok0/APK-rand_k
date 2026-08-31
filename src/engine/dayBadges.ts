@@ -9,7 +9,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 
-import { GLYPH_MAP } from '@/data/glyphs';
+import { GLYPH_MAP, SPECIAL_INCIDENT_GLYPH_IDS } from '@/data/glyphs';
 import { colors, moodColors } from '@/theme/tokens';
 import type { Activity } from '@/types/models';
 
@@ -57,6 +57,10 @@ export function dayBadges(activity: Pick<Activity, 'glyphIds' | 'importance'>): 
     else if (CALL_IDS.has(id)) keys.add('CALL');
     else if (DM_IDS.has(id)) keys.add('DM');
     else if (glyph.category === 'OBJECTS') keys.add('GIFT');
+    // Red Flag / Fight (Zuza / Special pack) count as an incident on their
+    // own, regardless of manually-set case priority — see
+    // SPECIAL_INCIDENT_GLYPH_IDS's comment in src/data/glyphs.ts.
+    if (SPECIAL_INCIDENT_GLYPH_IDS.has(id)) keys.add('INCIDENT');
   }
   if (activity.importance === 2) keys.add('INCIDENT');
   return Array.from(keys);

@@ -22,18 +22,17 @@ import React, { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { GLYPH_CATEGORIES, GLYPHS } from '@/data/glyphs';
+import { GLYPH_PACKS, GLYPHS } from '@/data/glyphs';
 import { GlyphIcon } from '@/components/GlyphIcon';
 import { TimeRangePicker } from '@/components/TimeRangePicker';
 import { MiniCalendarPicker } from '@/components/MiniCalendarPicker';
 import { Screen } from '@/components/ui';
+import { NOTE_MAX_LENGTH } from '@/engine/notes';
 import { MAX_PHOTOS_PER_ACTIVITY } from '@/engine/photos';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, priorityColors, priorityLabels, radius, spacing, typography } from '@/theme/tokens';
 import { dateLabelFull, todayKey } from '@/utils/dates';
 import { persistPickedPhoto } from '@/utils/photoStorage';
-
-const NOTE_MAX = 1000;
 
 export default function AddActivityScreen() {
   const params = useLocalSearchParams<{ date?: string }>();
@@ -178,11 +177,11 @@ export default function AddActivityScreen() {
         )}
 
         <Text style={styles.sectionLabel}>2. INCIDENT TYPE</Text>
-        {GLYPH_CATEGORIES.map((cat) => (
-          <View key={cat.key} style={styles.categoryBlock}>
-            <Text style={styles.categoryLabel}>{cat.label}</Text>
+        {GLYPH_PACKS.map((pack) => (
+          <View key={pack} style={styles.categoryBlock}>
+            <Text style={styles.categoryLabel}>{pack}</Text>
             <View style={styles.typeGrid}>
-              {GLYPHS.filter((g) => g.category === cat.key).map((g) => {
+              {GLYPHS.filter((g) => g.pack === pack).map((g) => {
                 const active = glyphIds.includes(g.id);
                 return (
                   <Pressable
@@ -226,12 +225,12 @@ export default function AddActivityScreen() {
             placeholder="What happened? Details, context, observations, feelings..."
             placeholderTextColor={colors.textFaint}
             value={note}
-            onChangeText={(t) => setNote(t.slice(0, NOTE_MAX))}
+            onChangeText={(t) => setNote(t.slice(0, NOTE_MAX_LENGTH))}
             multiline
-            maxLength={NOTE_MAX}
+            maxLength={NOTE_MAX_LENGTH}
           />
           <Text style={styles.reportCounter}>
-            {note.length} / {NOTE_MAX}
+            {note.length} / {NOTE_MAX_LENGTH}
           </Text>
         </View>
 
@@ -497,10 +496,16 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   reportInput: {
+    // maxHeight added alongside the 1000->5000 char limit bump — was
+    // unbounded (minHeight only), which at 5000 chars would stretch this
+    // box (and the whole page under it) absurdly tall instead of
+    // scrolling. Bounded height lets the native multiline TextInput scroll
+    // internally on its own, no extra ScrollView needed.
     color: colors.textPrimary,
     fontSize: 14,
     lineHeight: 20,
     minHeight: 90,
+    maxHeight: 300,
     textAlignVertical: 'top',
   },
   reportCounter: {

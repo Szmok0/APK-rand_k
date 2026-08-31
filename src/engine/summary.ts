@@ -1,7 +1,7 @@
 // Summary Engine — sekcja 18 MD. Statystyki liczone na bieżąco z Activity[], nigdy
 // przechowywane jako osobne wartości.
 
-import { GLYPH_MAP } from '@/data/glyphs';
+import { GLYPH_MAP, SPECIAL_INCIDENT_GLYPH_IDS } from '@/data/glyphs';
 import type { Activity } from '@/types/models';
 import { diffInDays, durationHours } from '@/utils/dates';
 
@@ -88,8 +88,14 @@ export function computeSummary(activities: Activity[]): Summary {
   };
 }
 
+// Also counts Red Flag / Fight (Zuza / Special pack) regardless of manually
+// -set priority — feeds DNA's CASE EQUATION and LID PREVIEW's threat score
+// (src/data/glyphs.ts's SPECIAL_INCIDENT_GLYPH_IDS comment has the full
+// rationale; dayBadges.ts's INCIDENT badge uses the same set).
 export function incidentCount(activities: Activity[]): number {
-  return activities.filter((a) => a.importance === 2).length;
+  return activities.filter(
+    (a) => a.importance === 2 || a.glyphIds.some((id) => SPECIAL_INCIDENT_GLYPH_IDS.has(id))
+  ).length;
 }
 
 // The 5 fixed HOME stat concepts (HOME_APPROVED_TECH_SPEC.md): TIME, ENCOUNTERS,

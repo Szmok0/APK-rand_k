@@ -14,6 +14,11 @@ export type Glyph = {
   category: GlyphCategory;
   moodTag: MoodTag | null;
   requiresDuration: boolean;
+  // Add Activity's visual section header — decoupled from `category` on
+  // purpose (see src/data/glyphs.ts header comment): grouping in the UI can
+  // be as rich as needed (8 new icon packs) without touching any of the
+  // engine logic that keys off the existing 5-value `category`.
+  pack: string;
 };
 
 // One day = one Activity. Multiple glyphs ("incident types") per activity.

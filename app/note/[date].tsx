@@ -14,11 +14,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Screen } from '@/components/ui';
 import { emptyStateFor } from '@/engine/emptyState';
+import { NOTE_MAX_LENGTH } from '@/engine/notes';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, spacing, typography } from '@/theme/tokens';
 import { dateBadgeLabel } from '@/utils/dates';
-
-const NOTE_MAX = 1000;
 
 export default function NoteScreen() {
   const { date } = useLocalSearchParams<{ date: string }>();
@@ -111,15 +110,15 @@ export default function NoteScreen() {
             <TextInput
               style={styles.input}
               value={draft}
-              onChangeText={(t) => setDraft(t.slice(0, NOTE_MAX))}
+              onChangeText={(t) => setDraft(t.slice(0, NOTE_MAX_LENGTH))}
               placeholder="What happened? Details, context, observations, feelings..."
               placeholderTextColor="rgba(36, 29, 24, 0.45)"
               multiline
-              maxLength={NOTE_MAX}
+              maxLength={NOTE_MAX_LENGTH}
               autoFocus
             />
             <Text style={styles.counter}>
-              {draft.length} / {NOTE_MAX}
+              {draft.length} / {NOTE_MAX_LENGTH}
             </Text>
           </>
         ) : activity?.note ? (
@@ -176,8 +175,13 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl,
   },
   input: {
-    flex: 1,
-    minHeight: 400,
+    // Was flex:1/minHeight only (unbounded growth) — at 5000 chars that
+    // made the box enormous instead of scrolling. A bounded maxHeight lets
+    // the native multiline TextInput scroll internally on its own, no
+    // wrapping RN ScrollView needed — this file's own header comment
+    // explains why that would be a real (not theoretical) risk here.
+    minHeight: 200,
+    maxHeight: 480,
     color: colors.textOnPaper,
     fontSize: 16,
     lineHeight: 26,
