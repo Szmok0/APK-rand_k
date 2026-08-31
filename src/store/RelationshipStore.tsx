@@ -24,6 +24,21 @@ function emptyRelationship(): Relationship {
   return { activities: [], startedAt: todayKey() };
 }
 
+// Activity.photoUri (single string) -> photoUris (array) migration. Runs on
+// every load of data that might predate the change: AsyncStorage (this
+// phone's own history), archived cases, and imported case files (someone
+// else's export, or an older gift build). Already-array data passes through
+// untouched; anything else just drops the old field.
+function migrateActivity(raw: Activity & { photoUri?: string }): Activity {
+  if (Array.isArray(raw.photoUris)) return raw;
+  const { photoUri, ...rest } = raw;
+  return { ...rest, photoUris: photoUri ? [photoUri] : undefined };
+}
+
+function migrateRelationship(raw: Relationship): Relationship {
+  return { ...raw, activities: raw.activities.map(migrateActivity) };
+}
+
 // Fixed case identity — see docs/ZUZA_CASE_LOG_CLAUDE_CODE_MASTER.md section 6.
 // This is data, not artwork: never bake it into a background image.
 function defaultCaseMeta(): CaseMeta {
@@ -43,7 +58,7 @@ export type UpsertActivityInput = {
   endTime?: string;
   note?: string;
   importance: 0 | 1 | 2;
-  photoUri?: string;
+  photoUris?: string[];
 };
 
 type RelationshipContextValue = {
@@ -79,7 +94,7 @@ export function RelationshipProvider({ children }: { children: React.ReactNode }
           AsyncStorage.getItem(CASE_META_KEY),
         ]);
         if (relRaw) {
-          setRelationship(JSON.parse(relRaw));
+          setRelationship(migrateRelationship(JSON.parse(relRaw)));
         } else if (SEED_ACTIVITIES.length > 0) {
           // Genuinely fresh install (nothing in AsyncStorage at all) + a
           // populated gift-build seed — see src/data/seedRelationship.ts for
@@ -90,7 +105,12 @@ export function RelationshipProvider({ children }: { children: React.ReactNode }
           setRelationship(seeded);
           await AsyncStorage.setItem(RELATIONSHIP_KEY, JSON.stringify(seeded));
         }
-        if (archRaw) setArchives(JSON.parse(archRaw));
+        if (archRaw) {
+          const parsedArchives: ArchiveEntry[] = JSON.parse(archRaw);
+          setArchives(
+            parsedArchives.map((entry) => ({ ...entry, relationship: migrateRelationship(entry.relationship) }))
+          );
+        }
         if (metaRaw) {
           setCaseMeta({ ...defaultCaseMeta(), ...JSON.parse(metaRaw) });
         } else if (SEED_ACTIVITIES.length > 0) {
@@ -145,7 +165,7 @@ export function RelationshipProvider({ children }: { children: React.ReactNode }
         glyphIds: input.glyphIds,
         note: input.note,
         importance: input.importance,
-        photoUri: input.photoUri,
+        photoUris: input.photoUris,
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,
       };
@@ -210,7 +230,7 @@ export function RelationshipProvider({ children }: { children: React.ReactNode }
       if (file.schema !== 'zuz-diary/relationship') {
         throw new Error('Invalid case file format');
       }
-      await persistRelationship(file.relationship);
+      await persistRelationship(migrateRelationship(file.relationship));
     },
     [persistRelationship]
   );

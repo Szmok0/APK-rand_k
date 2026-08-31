@@ -17,6 +17,13 @@ export type Glyph = {
 };
 
 // One day = one Activity. Multiple glyphs ("incident types") per activity.
+//
+// photoUris was a single `photoUri?: string` (ADD_ACTIVITY_TECH_SPEC called
+// for a "single photo attachment area") until real usage feedback: one
+// photo per day was too limiting. Now an array, capped at MAX_PHOTOS_PER_ACTIVITY
+// (src/engine/photos.ts) — see migrateActivity() in RelationshipStore.tsx for
+// how existing single-photoUri data (already-shipped gift builds included)
+// loads forward as a 1-item array.
 export type Activity = {
   id: string;
   date: string; // 'YYYY-MM-DD', unique across the case
@@ -25,7 +32,7 @@ export type Activity = {
   glyphIds: string[];
   note?: string;
   importance: 0 | 1 | 2; // CASE PRIORITY: 0 routine, 1 noted, 2 critical
-  photoUri?: string;
+  photoUris?: string[];
   favorite?: boolean; // Evidence Archive "starred" flag — real, persisted field
   createdAt: string;
   updatedAt: string;
@@ -61,7 +68,7 @@ export type Exhibit = {
   date: string;
   glyphIds: string[];
   note?: string;
-  photoUri?: string;
+  photoUris?: string[];
   importance: 0 | 1 | 2;
   favorite?: boolean;
 };

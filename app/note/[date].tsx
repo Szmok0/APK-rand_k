@@ -48,7 +48,7 @@ export default function NoteScreen() {
       endTime: activity.endTime,
       note: nextNote,
       importance: activity.importance,
-      photoUri: activity.photoUri,
+      photoUris: activity.photoUris,
     });
   }
 

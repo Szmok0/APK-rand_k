@@ -27,6 +27,7 @@ import { GlyphIcon } from '@/components/GlyphIcon';
 import { TimeRangePicker } from '@/components/TimeRangePicker';
 import { MiniCalendarPicker } from '@/components/MiniCalendarPicker';
 import { Screen } from '@/components/ui';
+import { MAX_PHOTOS_PER_ACTIVITY } from '@/engine/photos';
 import { useRelationship } from '@/store/RelationshipStore';
 import { colors, priorityColors, priorityLabels, radius, spacing, typography } from '@/theme/tokens';
 import { dateLabelFull, todayKey } from '@/utils/dates';
@@ -44,7 +45,7 @@ export default function AddActivityScreen() {
   const [endTime, setEndTime] = useState('20:00');
   const [note, setNote] = useState('');
   const [importance, setImportance] = useState<0 | 1 | 2>(0);
-  const [photoUri, setPhotoUri] = useState<string | undefined>(undefined);
+  const [photoUris, setPhotoUris] = useState<string[]>([]);
 
   const [dateExpanded, setDateExpanded] = useState(false);
 
@@ -62,14 +63,14 @@ export default function AddActivityScreen() {
       setEndTime(existing.endTime ?? '20:00');
       setNote(existing.note ?? '');
       setImportance(existing.importance);
-      setPhotoUri(existing.photoUri);
+      setPhotoUris(existing.photoUris ?? []);
     } else {
       setGlyphIds([]);
       setStartTime('18:00');
       setEndTime('20:00');
       setNote('');
       setImportance(0);
-      setPhotoUri(undefined);
+      setPhotoUris([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, loading]);
@@ -78,14 +79,29 @@ export default function AddActivityScreen() {
     setGlyphIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
+  // Was a single photoUri slot ("Single photo attachment area" per the
+  // originally approved ADD_ACTIVITY_TECH_SPEC) — real-usage feedback after
+  // the gift build shipped: one photo per day was too limiting. Now appends
+  // up to MAX_PHOTOS_PER_ACTIVITY, picking as many as the remaining room
+  // allows in one go (selectionLimit) instead of one-at-a-time.
   async function pickPhoto() {
+    const remaining = MAX_PHOTOS_PER_ACTIVITY - photoUris.length;
+    if (remaining <= 0) return;
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) return;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 0.7,
+      allowsMultipleSelection: remaining > 1,
+      selectionLimit: remaining,
     });
-    if (!result.canceled && result.assets[0]) setPhotoUri(result.assets[0].uri);
+    if (!result.canceled && result.assets.length > 0) {
+      setPhotoUris((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_PHOTOS_PER_ACTIVITY));
+    }
+  }
+
+  function removePhoto(index: number) {
+    setPhotoUris((prev) => prev.filter((_, i) => i !== index));
   }
 
   function handleSave() {
@@ -97,7 +113,7 @@ export default function AddActivityScreen() {
       endTime,
       note: note.trim() || undefined,
       importance,
-      photoUri,
+      photoUris: photoUris.length > 0 ? photoUris : undefined,
     });
     router.replace({ pathname: '/day/[date]', params: { date: selectedDate } });
   }
@@ -217,21 +233,62 @@ export default function AddActivityScreen() {
         <Text style={styles.sectionLabel}>5. EVIDENCE (PHOTOS)</Text>
         <View style={styles.evidenceRow}>
           <Pressable style={styles.photoFrameWrap} onPress={pickPhoto}>
-            {photoUri && <Image source={{ uri: photoUri }} style={styles.photoInner} />}
+            {photoUris[0] && <Image source={{ uri: photoUris[0] }} style={styles.photoInner} />}
             <Image
               source={require('../assets/noir/add-activity/photo_frame.png')}
               style={styles.photoFrameArt}
             />
-            {!photoUri && (
+            {!photoUris[0] && (
               <Ionicons name="add" size={28} color={colors.textFaint} style={styles.photoPlus} />
             )}
+            {photoUris[0] && (
+              <Pressable style={styles.photoRemoveBadge} onPress={() => removePhoto(0)} hitSlop={8}>
+                <Ionicons name="close" size={12} color={colors.textPrimary} />
+              </Pressable>
+            )}
           </Pressable>
-          <Pressable style={styles.evidenceRight} onPress={pickPhoto}>
-            <Ionicons name="finger-print-outline" size={22} color={colors.textFaint} />
-            <Text style={styles.evidenceRightLabel}>ATTACH{'\n'}EVIDENCE</Text>
-          </Pressable>
+
+          {photoUris.length === 0 ? (
+            // First-time hint — same look as before multi-photo support.
+            <Pressable style={styles.evidenceRight} onPress={pickPhoto}>
+              <Ionicons name="finger-print-outline" size={22} color={colors.textFaint} />
+              <Text style={styles.evidenceRightLabel}>ATTACH{'\n'}EVIDENCE</Text>
+            </Pressable>
+          ) : (
+            // No baked asset exists for extra photo slots (the frame art was
+            // built for exactly one) — plain bordered squares, same "no
+            // matching asset, use a plain code-styled tile" pattern as the
+            // LID PREVIEW stats card and Evidence Archive's empty-state card.
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.extraPhotosScroll}
+              contentContainerStyle={styles.extraPhotosRow}
+            >
+              {photoUris.slice(1).map((uri, i) => {
+                const index = i + 1;
+                return (
+                  <View key={uri} style={styles.extraPhotoWrap}>
+                    <Image source={{ uri }} style={styles.extraPhotoImage} />
+                    <Pressable style={styles.photoRemoveBadge} onPress={() => removePhoto(index)} hitSlop={8}>
+                      <Ionicons name="close" size={12} color={colors.textPrimary} />
+                    </Pressable>
+                  </View>
+                );
+              })}
+              {photoUris.length < MAX_PHOTOS_PER_ACTIVITY && (
+                <Pressable style={styles.extraPhotoAddTile} onPress={pickPhoto}>
+                  <Ionicons name="add" size={20} color={colors.textFaint} />
+                </Pressable>
+              )}
+            </ScrollView>
+          )}
         </View>
-        <Text style={styles.evidenceCaption}>Add photos, screenshots, voice notes...</Text>
+        <Text style={styles.evidenceCaption}>
+          {photoUris.length > 0
+            ? `${photoUris.length} / ${MAX_PHOTOS_PER_ACTIVITY} photos`
+            : 'Add photos, screenshots, voice notes...'}
+        </Text>
 
         <Text style={styles.sectionLabel}>6. CASE PRIORITY</Text>
         <View style={styles.priorityRow}>
@@ -479,6 +536,45 @@ const styles = StyleSheet.create({
   },
   photoPlus: {
     marginBottom: '18%',
+  },
+  photoRemoveBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.red,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  extraPhotosScroll: {
+    flex: 1,
+  },
+  extraPhotosRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  extraPhotoWrap: {
+    width: 64,
+    height: 64,
+  },
+  extraPhotoImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: radius.sm,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+  },
+  extraPhotoAddTile: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.sm,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   evidenceRight: {
     flex: 1,

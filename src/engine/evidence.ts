@@ -29,7 +29,7 @@ export function buildEvidenceArchive(activities: Activity[]): Exhibit[] {
     date: a.date,
     glyphIds: a.glyphIds,
     note: a.note,
-    photoUri: a.photoUri,
+    photoUris: a.photoUris,
     importance: a.importance,
     favorite: a.favorite,
   }));

@@ -20,8 +20,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { Alert, Image, LayoutChangeEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  Image,
+  LayoutChangeEvent,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GLYPH_MAP } from '@/data/glyphs';
@@ -95,6 +106,17 @@ export default function DayDetailScreen() {
   // one hardcoded line instead of rotating between the pool's 2 options.
   const noteEmptyState = useMemo(() => emptyStateFor('EVIDENCE / NO TEXT NOTE'), []);
 
+  // Which of the activity's photos the frame's carousel is currently
+  // showing (multi-photo support — was a single fixed photoUri). Reset
+  // whenever the day changes so a new activity never opens mid-carousel.
+  const photoUris = activity?.photoUris ?? [];
+  const [photoIndex, setPhotoIndex] = useState(0);
+  useEffect(() => setPhotoIndex(0), [date]);
+  function onPhotoScrollEnd(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    const width = photoPriorityLayout.photoWidth;
+    if (width > 0) setPhotoIndex(Math.round(e.nativeEvent.contentOffset.x / width));
+  }
+
   // Photo frame is 70% of the FULL row width (product owner spec, in those
   // words: "na szerokość ekranu ramka zdjęcia ma zajmować 70%"), kept at its
   // own real aspect ratio so its torn-paper border isn't distorted. Priority
@@ -136,8 +158,9 @@ export default function DayDetailScreen() {
   async function handleShare() {
     if (!activity) return;
     const canShare = await Sharing.isAvailableAsync();
-    if (activity.photoUri && canShare) {
-      await Sharing.shareAsync(activity.photoUri);
+    const uri = activity.photoUris?.[photoIndex] ?? activity.photoUris?.[0];
+    if (uri && canShare) {
+      await Sharing.shareAsync(uri);
     } else {
       Alert.alert('Sharing', 'This device does not support sharing in this context.');
     }
@@ -270,7 +293,7 @@ export default function DayDetailScreen() {
               </View>
             )}
 
-            {(activity.photoUri || activity.importance > 0) && (
+            {(photoUris.length > 0 || activity.importance > 0) && (
               <View style={styles.photoPriorityRow}>
                 {/* Always shown once this row renders at all — even with no
                     photo attached — so a lone priority card never sits next
@@ -282,8 +305,42 @@ export default function DayDetailScreen() {
                     { width: photoPriorityLayout.photoWidth, height: photoPriorityLayout.photoHeight },
                   ]}
                 >
-                  {activity.photoUri ? (
-                    <Image source={{ uri: activity.photoUri }} style={styles.photoInner} />
+                  {photoUris.length > 0 ? (
+                    // Was a single Image here (one photoUri) — multiple
+                    // photos now page through the same fixed frame instead
+                    // of needing a whole new layout, with dots below
+                    // showing which one of how many is on screen. Each page
+                    // is exactly one frame wide (for pagingEnabled to snap
+                    // correctly); the inset image inside it reuses
+                    // photoInner's original percentages, just resolved to
+                    // pixels since a ScrollView page's own percentage sizing
+                    // can't be trusted to resolve against its scroll content.
+                    <ScrollView
+                      horizontal
+                      pagingEnabled
+                      showsHorizontalScrollIndicator={false}
+                      onMomentumScrollEnd={onPhotoScrollEnd}
+                      style={{ width: photoPriorityLayout.photoWidth, height: photoPriorityLayout.photoHeight }}
+                    >
+                      {photoUris.map((uri) => (
+                        <View
+                          key={uri}
+                          style={{ width: photoPriorityLayout.photoWidth, height: photoPriorityLayout.photoHeight }}
+                        >
+                          <Image
+                            source={{ uri }}
+                            style={{
+                              position: 'absolute',
+                              left: photoPriorityLayout.photoWidth * 0.04,
+                              top: photoPriorityLayout.photoHeight * 0.05,
+                              width: photoPriorityLayout.photoWidth * 0.92,
+                              height: photoPriorityLayout.photoHeight * 0.87,
+                              borderRadius: 2,
+                            }}
+                          />
+                        </View>
+                      ))}
+                    </ScrollView>
                   ) : (
                     <View style={styles.photoEmptySlot}>
                       <Ionicons name="image-outline" size={22} color={colors.textFaint} />
@@ -293,6 +350,13 @@ export default function DayDetailScreen() {
                     source={require('../../assets/noir/day-detail/photo_frame.png')}
                     style={styles.photoFrameArt}
                   />
+                  {photoUris.length > 1 && (
+                    <View style={styles.photoDotsRow} pointerEvents="none">
+                      {photoUris.map((uri, i) => (
+                        <View key={uri} style={[styles.photoDot, i === photoIndex && styles.photoDotActive]} />
+                      ))}
+                    </View>
+                  )}
                 </View>
                 {activity.importance > 0 && (
                   <View
@@ -605,6 +669,22 @@ const styles = StyleSheet.create({
   photoFrameArt: {
     width: '100%',
     height: '100%',
+  },
+  photoDotsRow: {
+    position: 'absolute',
+    bottom: '6%',
+    alignSelf: 'center',
+    flexDirection: 'row',
+    gap: 4,
+  },
+  photoDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: 'rgba(241, 231, 210, 0.4)',
+  },
+  photoDotActive: {
+    backgroundColor: colors.gold,
   },
   priorityBadgeWrap: {
     position: 'relative',

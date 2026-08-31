@@ -56,8 +56,9 @@ export function DayDetailPanel({ date }: Props) {
   async function handleShare() {
     if (!activity) return;
     const canShare = await Sharing.isAvailableAsync();
-    if (activity.photoUri && canShare) {
-      await Sharing.shareAsync(activity.photoUri);
+    const uri = activity.photoUris?.[0];
+    if (uri && canShare) {
+      await Sharing.shareAsync(uri);
     } else {
       Alert.alert('Sharing', 'This device does not support sharing in this context.');
     }

@@ -62,7 +62,7 @@ export default function EvidenceScreen() {
   const stats = useMemo(
     () => ({
       total: archive.length,
-      withPhoto: archive.filter((e) => !!e.photoUri).length,
+      withPhoto: archive.filter((e) => !!e.photoUris?.length).length,
       withNotes: archive.filter((e) => !!e.note).length,
       favorites: archive.filter((e) => !!e.favorite).length,
     }),
@@ -249,7 +249,7 @@ function ExhibitCard({
         <View style={styles.cardFooterRow}>
           <Text style={styles.exhibitDate}>
             {dateLabelUpper(exhibit.date)}
-            {exhibit.photoUri ? '  •  📷' : ''}
+            {exhibit.photoUris?.length ? `  •  📷${exhibit.photoUris.length > 1 ? `×${exhibit.photoUris.length}` : ''}` : ''}
           </Text>
           {badge && (
             <View style={[styles.tagPill, { borderColor: DAY_BADGE_COLORS[badge] }]}>
